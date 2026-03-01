@@ -1,13 +1,17 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   Heart, Volume2, Snail, Mic, MicOff, Send, BookOpen, MessageCircle,
   GraduationCap, ChevronLeft, ChevronRight, Check, X, RotateCcw,
-  Sparkles, Coffee, Map, ShoppingCart, Phone, Star, Flame, Target, LogOut
+  Sparkles, Coffee, Map, ShoppingCart, Phone, Star, Flame, Target, LogOut,
+  AlertTriangle, Lightbulb, Headphones
 } from 'lucide-react';
 
 // ── Firebase Imports ───────────────────────────────────────────────
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
+import {
+  getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut,
+  GoogleAuthProvider, signInWithPopup
+} from 'firebase/auth';
 import { getFirestore, doc, onSnapshot, setDoc } from 'firebase/firestore';
 
 // ═══════════════════════════════════════════════════════════════════
@@ -30,41 +34,10 @@ const auth = app ? getAuth(app) : null;
 const db = app ? getFirestore(app) : null;
 
 // ═══════════════════════════════════════════════════════════════════
-// DATA — Vocabulary (15+ words) & Phrases (5+)
+// DATA
 // ═══════════════════════════════════════════════════════════════════
-const INITIAL_VOCABULARY = [
-  { id: 'v1', hungarian: 'alma', english: 'apple', emoji: '🍎' },
-  { id: 'v2', hungarian: 'víz', english: 'water', emoji: '💧' },
-  { id: 'v3', hungarian: 'ház', english: 'house', emoji: '🏠' },
-  { id: 'v4', hungarian: 'macska', english: 'cat', emoji: '🐱' },
-  { id: 'v5', hungarian: 'kutya', english: 'dog', emoji: '🐶' },
-  { id: 'v6', hungarian: 'nap', english: 'sun', emoji: '☀️' },
-  { id: 'v7', hungarian: 'hold', english: 'moon', emoji: '🌙' },
-  { id: 'v8', hungarian: 'könyv', english: 'book', emoji: '📖' },
-  { id: 'v9', hungarian: 'kávé', english: 'coffee', emoji: '☕' },
-  { id: 'v10', hungarian: 'kenyér', english: 'bread', emoji: '🍞' },
-  { id: 'v11', hungarian: 'barát', english: 'friend', emoji: '🤝' },
-  { id: 'v12', hungarian: 'szerelem', english: 'love', emoji: '❤️' },
-  { id: 'v13', hungarian: 'virág', english: 'flower', emoji: '🌸' },
-  { id: 'v14', hungarian: 'csillag', english: 'star', emoji: '⭐' },
-  { id: 'v15', hungarian: 'zene', english: 'music', emoji: '🎵' },
-  { id: 'v16', hungarian: 'szép', english: 'beautiful', emoji: '✨' },
-  { id: 'v17', hungarian: 'boldog', english: 'happy', emoji: '😊' },
-  { id: 'v18', hungarian: 'enni', english: 'to eat', emoji: '🍽️' },
-  { id: 'v19', hungarian: 'inni', english: 'to drink', emoji: '🥤' },
-  { id: 'v20', hungarian: 'aludni', english: 'to sleep', emoji: '😴' },
-];
-
-const PHRASES = [
-  { id: 'p1', hungarian: 'Jó reggelt!', english: 'Good morning!', emoji: '🌅' },
-  { id: 'p2', hungarian: 'Hogy vagy?', english: 'How are you?', emoji: '😊' },
-  { id: 'p3', hungarian: 'Köszönöm szépen!', english: 'Thank you very much!', emoji: '🙏' },
-  { id: 'p4', hungarian: 'Nem értem.', english: "I don't understand.", emoji: '🤔' },
-  { id: 'p5', hungarian: 'Beszélsz magyarul?', english: 'Do you speak Hungarian?', emoji: '🗣️' },
-  { id: 'p6', hungarian: 'Mennyibe kerül?', english: 'How much does it cost?', emoji: '💰' },
-  { id: 'p7', hungarian: 'Hol van a mosdó?', english: 'Where is the bathroom?', emoji: '🚻' },
-  { id: 'p8', hungarian: 'Segítséget kérek!', english: 'I need help!', emoji: '🆘' },
-];
+import { INITIAL_VOCABULARY, PHRASES, CATEGORIES, PHRASE_CATEGORIES } from './data/vocabulary';
+import { GRAMMAR_LESSONS } from './data/grammar';
 
 const AI_SCENARIOS = [
   { id: 'coffee', label: '☕ Kávé rendelése', icon: Coffee, systemExtra: 'Simulate ordering coffee at a café. Start by greeting the student as a barista.' },
@@ -258,24 +231,89 @@ function SttButton({ targetWord, onResult }) {
 // ═══════════════════════════════════════════════════════════════════
 
 function VocabularyTab({ vocabMap, generatedCards, onMarkKnown, onResetAll, onProgress, sound }) {
-  // Combine base vocabulary + generated cards
-  const allCardsOriginal = [
-    ...INITIAL_VOCABULARY,
-    ...generatedCards
-  ];
-
-  // Map state to cards
-  const allCards = allCardsOriginal.map(c => ({
-    ...c,
-    status: vocabMap[c.id] || 'learning' // default to learning if unknown
-  }));
-
-  const learningCards = allCards.filter(c => c.status === 'learning');
-
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [sttFeedback, setSttFeedback] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
+
+  // Combine base vocabulary + generated cards
+  const allCardsOriginal = useMemo(() => [
+    ...INITIAL_VOCABULARY,
+    ...generatedCards
+  ], [generatedCards]);
+
+  // Map state to cards
+  const allCards = useMemo(() => allCardsOriginal.map(c => ({
+    ...c,
+    status: vocabMap[c.id] || 'learning'
+  })), [allCardsOriginal, vocabMap]);
+
+  // Derived state for selection
+  const filteredCards = useMemo(() => {
+    if (!selectedCategory) return [];
+    return selectedCategory === 'szemelyes'
+      ? allCards.filter(c => c._generated)
+      : allCards.filter(c => c.categoryId === selectedCategory);
+  }, [allCards, selectedCategory]);
+
+  const learningCards = useMemo(() => filteredCards.filter(c => c.status === 'learning'), [filteredCards]);
+
+  // Reset index when category changes
+  useEffect(() => {
+    setIndex(0);
+    setFlipped(false);
+    setSttFeedback(null);
+  }, [selectedCategory]);
+
+  const handleSttResult = useCallback((match) => {
+    setSttFeedback(match ? 'correct' : 'retry');
+    if (match) setTimeout(() => setSttFeedback(null), 2000);
+  }, []);
+
+  if (!selectedCategory) {
+    // Show Category List
+    const categoriesWithGenerated = [...CATEGORIES];
+    if (generatedCards.length > 0) {
+      categoriesWithGenerated.push({ id: 'szemelyes', name: 'Saját szavaim (Mentett)' });
+    }
+
+    return (
+      <div className="flex flex-col gap-3 animate-slide-up">
+        <h2 className="text-xl font-bold text-gray-800 mb-2 px-1">Témakörök</h2>
+        {categoriesWithGenerated.map(cat => {
+          const catCards = cat.id === 'szemelyes'
+            ? allCards.filter(c => c._generated)
+            : allCards.filter(c => c.categoryId === cat.id);
+          const knownCat = catCards.filter(c => c.status === 'known').length;
+          const totalCat = catCards.length;
+          const progressPct = totalCat > 0 ? (knownCat / totalCat) * 100 : 0;
+
+          if (totalCat === 0 && cat.id !== 'szemelyes') return null; // Hide empty categories
+
+          return (
+            <button
+              key={cat.id}
+              onClick={() => setSelectedCategory(cat.id)}
+              className="flex flex-col gap-2 bg-white/80 backdrop-blur rounded-2xl p-4 shadow-sm border border-purple-50 hover:shadow-md hover:border-purple-200 transition-all text-left"
+            >
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-gray-700">{cat.name}</span>
+                <span className="text-sm font-semibold text-purple-500 bg-purple-50 px-2 py-1 rounded-lg">
+                  {knownCat}/{totalCat}
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-pink-400 to-purple-400" style={{ width: `${progressPct}%` }} />
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // State for flashcards (already defined above)
 
   // Safe index logic
   let displayIndex = 0;
@@ -284,18 +322,24 @@ function VocabularyTab({ vocabMap, generatedCards, onMarkKnown, onResetAll, onPr
   }
   const card = learningCards[displayIndex];
 
-
   const handleKnow = () => {
     if (!card) return;
     sound.playDing();
     setShowConfetti(true);
     setTimeout(() => setShowConfetti(false), 1200);
 
-    onMarkKnown(card.id);
+    // SRS Logic: learning -> review -> known (mastered)
+    const currentStatus = vocabMap[card.id] || 'learning';
+    let nextStatus = 'known';
+
+    if (currentStatus === 'learning') nextStatus = 'review';
+    else if (currentStatus === 'review') nextStatus = 'known';
+
+    onMarkKnown(card.id, nextStatus);
     onProgress();
     setFlipped(false);
     setSttFeedback(null);
-    setIndex(i => i); // keep index, array will shrink
+    setIndex(i => i);
   };
 
   const handlePractice = () => {
@@ -310,47 +354,63 @@ function VocabularyTab({ vocabMap, generatedCards, onMarkKnown, onResetAll, onPr
     setFlipped(f => !f);
   };
 
-  const handleSttResult = useCallback((match) => {
-    setSttFeedback(match ? 'correct' : 'retry');
-    if (match) setTimeout(() => setSttFeedback(null), 2000);
-  }, []);
+  // STT handler moved up
+
+  const handleBack = () => setSelectedCategory(null);
 
   if (!card) {
+    // Reached end of category
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center animate-slide-up">
         <div className="text-6xl mb-4">🎉</div>
-        <h2 className="text-2xl font-bold text-purple-700 mb-2">Gratulálok!</h2>
-        <p className="text-gray-600 mb-6">Az összes kártyát megtanultad!</p>
-        <button
-          onClick={() => {
-            onResetAll();
-            setIndex(0);
-          }}
-          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-400 to-purple-400 text-white rounded-full font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all"
-        >
-          <RotateCcw size={18} /> Újrakezdés
-        </button>
+        <h2 className="text-2xl font-bold text-purple-700 mb-2">Szuper!</h2>
+        <p className="text-gray-600 mb-6">Ebben a kategóriában mindent megtanultál!</p>
+        <div className="flex gap-3">
+          <button onClick={handleBack} className="px-5 py-3 bg-gray-100 text-gray-600 rounded-full font-bold shadow-md hover:bg-gray-200 transition-all">
+            Vissza
+          </button>
+          <button onClick={() => { onResetAll(); setIndex(0); }} className="px-5 py-3 bg-gradient-to-r from-pink-400 to-purple-400 text-white rounded-full font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all">
+            <RotateCcw size={18} className="inline mr-1" /> Újrakezdés
+          </button>
+        </div>
       </div>
     );
   }
 
-  const knownCount = allCards.filter(c => c.status === 'known').length;
-  const totalCount = allCards.length;
+  const knownCount = filteredCards.filter(c => c.status === 'known').length;
+  const totalCount = filteredCards.length;
+
+  const categoryName = selectedCategory === 'szemelyes' ? 'Saját szavaim' : CATEGORIES.find(c => c.id === selectedCategory)?.name;
 
   return (
     <div className="flex flex-col items-center gap-4 relative animate-slide-up">
-      <Confetti active={showConfetti} />
-
-      <div className="flex items-center gap-2 text-sm text-gray-500">
-        <GraduationCap size={14} />
-        <span>{knownCount}/{totalCount} szó megtanulva</span>
+      <div className="w-full flex items-center justify-between mb-2">
+        <button onClick={handleBack} className="p-2 text-purple-600 hover:bg-purple-50 rounded-full transition-colors">
+          <ChevronLeft size={24} />
+        </button>
+        <div className="text-center">
+          <h3 className="font-bold text-gray-800 text-sm max-w-[200px] truncate">{categoryName}</h3>
+          <div className="flex items-center justify-center gap-1.5 text-xs text-gray-500 mt-0.5">
+            <GraduationCap size={12} />
+            <span>{knownCount}/{totalCount} szó</span>
+          </div>
+        </div>
+        <div className="w-10"></div> {/* Spacer to center title */}
       </div>
+
+      <Confetti active={showConfetti} />
 
       <div className="perspective w-full max-w-xs cursor-pointer" onClick={handleFlip}>
         <div className={`flip-inner relative w-full h-64 ${flipped ? 'flipped' : ''}`}>
           <div className="flip-front absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50 rounded-2xl shadow-lg border border-pink-100 p-6">
             <span className="text-5xl mb-3">{card.emoji}</span>
-            <span className="text-2xl font-bold text-gray-800">{card.hungarian}</span>
+            <span className="text-2xl font-bold text-gray-800 text-center">{card.hungarian}</span>
+            {card.hint && (
+              <div className="mt-2 px-3 py-1 bg-white/60 rounded-lg border border-pink-100 flex items-center gap-1.5 animate-fade-in">
+                <Lightbulb size={12} className="text-amber-500" />
+                <span className="text-[11px] text-gray-500 italic leading-tight">{card.hint}</span>
+              </div>
+            )}
             <span className="text-xs text-gray-400 mt-4">Koppints a fordításhoz →</span>
             {card._generated && (
               <span className="absolute top-3 left-3 text-[10px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">AI Új</span>
@@ -358,7 +418,14 @@ function VocabularyTab({ vocabMap, generatedCards, onMarkKnown, onResetAll, onPr
           </div>
           <div className="flip-back absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-purple-100 to-blue-50 rounded-2xl shadow-lg border border-purple-200 p-6">
             <span className="text-5xl mb-3">{card.emoji}</span>
-            <span className="text-2xl font-bold text-purple-800">{card.english}</span>
+            <div className="flex flex-col items-center">
+              <span className="text-2xl font-bold text-purple-800 text-center">{card.english}</span>
+              {card.phonetic && (
+                <span className="text-sm font-medium text-blue-500 bg-blue-50 px-3 py-0.5 rounded-full mt-1.5 flex items-center gap-1 shadow-sm">
+                  <Headphones size={12} /> /{card.phonetic}/
+                </span>
+              )}
+            </div>
             <span className="text-xs text-purple-400 mt-4">← Koppints vissza</span>
           </div>
         </div>
@@ -387,11 +454,11 @@ function VocabularyTab({ vocabMap, generatedCards, onMarkKnown, onResetAll, onPr
       )}
       {sttFeedback === 'retry' && (
         <div className="animate-bounce-in flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-700 rounded-full font-semibold">
-          <RotateCcw size={16} /> Próbáld újra, menni fog! 💪
+          <RotateCcw size={16} /> Próbáld újra! 💪
         </div>
       )}
 
-      <div className="flex gap-3 w-full max-w-xs">
+      <div className="flex gap-3 w-full max-w-xs mt-2">
         <button
           onClick={handlePractice}
           className="flex-1 flex items-center justify-center gap-2 py-3 bg-amber-100 text-amber-700 rounded-2xl font-bold hover:bg-amber-200 hover:scale-[1.02] active:scale-95 transition-all"
@@ -422,17 +489,58 @@ function VocabularyTab({ vocabMap, generatedCards, onMarkKnown, onResetAll, onPr
 }
 
 function PhrasesTab() {
+  const [selectedCategory, setSelectedCategory] = useState(null);
+
+  if (!selectedCategory) {
+    return (
+      <div className="flex flex-col gap-3 animate-slide-up">
+        <h2 className="text-xl font-bold text-gray-800 mb-2 px-1">Gyakori Helyzetek</h2>
+        {PHRASE_CATEGORIES.map(cat => {
+          const catPhrases = PHRASES.filter(p => p.categoryId === cat.id);
+          if (catPhrases.length === 0) return null;
+
+          return (
+            <button
+              key={cat.id}
+              onClick={() => setSelectedCategory(cat.id)}
+              className="flex items-center justify-between gap-3 bg-white/80 backdrop-blur rounded-2xl p-4 shadow-sm border border-purple-50 hover:shadow-md hover:border-purple-200 transition-all text-left"
+            >
+              <span className="font-bold text-gray-700">{cat.name}</span>
+              <span className="text-sm font-semibold text-purple-500 bg-purple-50 px-3 py-1 rounded-full">
+                {catPhrases.length}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  const currentPhrases = PHRASES.filter(p => p.categoryId === selectedCategory);
+  const categoryName = PHRASE_CATEGORIES.find(c => c.id === selectedCategory)?.name;
+
   return (
     <div className="flex flex-col gap-3 animate-slide-up">
-      <p className="text-sm text-gray-500 text-center mb-1">Kattints a hangszóróra a kiejtéshez! 🔊</p>
-      {PHRASES.map(phrase => (
+      <div className="flex items-center mb-1">
+        <button onClick={() => setSelectedCategory(null)} className="p-2 text-purple-600 hover:bg-purple-50 rounded-full transition-colors">
+          <ChevronLeft size={24} />
+        </button>
+        <h3 className="font-bold text-gray-800 text-center flex-1 pr-10">{categoryName}</h3>
+      </div>
+      <p className="text-sm text-gray-500 text-center mb-2">Kattints a hangszóróra a kiejtéshez! 🔊</p>
+      {currentPhrases.map(phrase => (
         <div
           key={phrase.id}
           className="flex items-center gap-3 bg-white/80 backdrop-blur rounded-2xl p-4 shadow-sm border border-purple-50 hover:shadow-md hover:border-purple-100 transition-all"
         >
           <span className="text-3xl flex-shrink-0">{phrase.emoji}</span>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-gray-800 text-sm">{phrase.hungarian}</p>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <p className="font-bold text-gray-800 text-sm">{phrase.hungarian}</p>
+              {phrase.literal && (
+                <span className="text-[10px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded italic">Szó szerint: {phrase.literal}</span>
+              )}
+            </div>
             <p className="text-purple-600 font-semibold text-sm">{phrase.english}</p>
           </div>
           <div className="flex gap-1 flex-shrink-0">
@@ -451,6 +559,105 @@ function PhrasesTab() {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function GrammarTab() {
+  const [selectedLesson, setSelectedLesson] = useState(null);
+
+  // Auto-scroll on lesson change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [selectedLesson]);
+
+  if (!selectedLesson) {
+    return (
+      <div className="flex flex-col gap-3 animate-slide-up">
+        <h2 className="text-xl font-bold text-gray-800 mb-2 px-1">Nyelvtani Alapok</h2>
+        <p className="text-sm text-gray-600 mb-2 px-1">Rövid, érthető magyarázatok a legfontosabb szabályokról.</p>
+        {GRAMMAR_LESSONS.map((lesson, idx) => (
+          <button
+            key={lesson.id}
+            onClick={() => setSelectedLesson(lesson)}
+            className="flex items-center gap-4 bg-white/80 backdrop-blur rounded-2xl p-4 shadow-sm border border-purple-50 hover:shadow-md hover:border-purple-200 transition-all text-left"
+          >
+            <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-xl flex-shrink-0">
+              {lesson.emoji}
+            </div>
+            <div className="flex-1">
+              <span className="text-xs font-bold text-purple-400 tracking-wide uppercase">Lecke {idx + 1}</span>
+              <p className="font-bold text-gray-700 text-lg">{lesson.title}</p>
+            </div>
+            <ChevronRight size={20} className="text-gray-300" />
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4 animate-slide-up pb-6">
+      <div className="flex items-center mb-1">
+        <button onClick={() => setSelectedLesson(null)} className="p-2 text-purple-600 hover:bg-purple-50 rounded-full transition-colors shrink-0">
+          <ChevronLeft size={24} />
+        </button>
+        <h3 className="font-bold text-gray-800 text-lg text-center flex-1 pr-10">{selectedLesson.title}</h3>
+      </div>
+
+      <div className="bg-white rounded-3xl p-6 shadow-sm border border-purple-100 relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-4 text-6xl opacity-10 pointer-events-none">
+          {selectedLesson.emoji}
+        </div>
+
+        {/* Render markdown-like theory */}
+        <div className="relative z-10 text-gray-700 text-sm leading-relaxed space-y-4">
+          {selectedLesson.theory.split('\n\n').map((para, i) => (
+            <p key={i} dangerouslySetInnerHTML={{
+              __html: para.replace(/\*\*([^*]+)\*\*/g, '<strong class="text-purple-700">$1</strong>')
+            }} />
+          ))}
+        </div>
+
+        {/* Common Pitfalls Section */}
+        {selectedLesson.pitfall && (
+          <div className="mt-6 p-4 bg-amber-50 rounded-2xl border border-amber-100 animate-fade-in">
+            <h5 className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+              <AlertTriangle size={14} /> Vigyázz! (Common Pitfall)
+            </h5>
+            <p className="text-sm text-amber-800 font-medium leading-snug">{selectedLesson.pitfall}</p>
+          </div>
+        )}
+      </div>
+
+      <h4 className="font-bold text-gray-800 mt-2 px-1 flex items-center gap-2">
+        <GraduationCap size={18} className="text-purple-500" />
+        Példamondatok
+      </h4>
+
+      <div className="space-y-3">
+        {selectedLesson.examples.map((ex, i) => (
+          <div key={i} className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-4 border border-purple-100 flex items-center justify-between gap-3">
+            <div className="flex-1">
+              <p className="font-bold text-gray-800">{ex.english}</p>
+              <p className="text-sm text-gray-500 mt-1">{ex.hungarian}</p>
+            </div>
+            <button
+              onClick={() => speak(ex.english, 0.9)}
+              className="p-3 rounded-full bg-white text-purple-600 shadow-sm hover:shadow-md transition-all shrink-0"
+            >
+              <Volume2 size={18} />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <button
+        onClick={() => setSelectedLesson(null)}
+        className="mt-4 py-3 bg-purple-100 text-purple-700 font-bold rounded-2xl hover:bg-purple-200 transition-colors"
+      >
+        Vissza a leckékhez
+      </button>
     </div>
   );
 }
@@ -663,66 +870,91 @@ function AiChatTab({ onNewFlashcard }) {
 // ═══════════════════════════════════════════════════════════════════
 // AUTH SCREEN
 // ═══════════════════════════════════════════════════════════════════
-function LoginScreen() {
+function LoginScreen({ onLogin, error }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if (!auth) {
-      setError("A Firebase nincs beállítva a .env fájlban!");
-      return;
-    }
-    setError(null);
     setLoading(true);
+    onLogin(email, password);
+  };
+
+  const handleGoogle = async () => {
+    setLoading(true);
+    const provider = new GoogleAuthProvider();
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithPopup(auth, provider);
     } catch (err) {
-      setError("Hibás email vagy jelszó. 😢");
-    } finally {
+      console.error("Google login error:", err);
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-pink-50 via-purple-50 to-blue-50 p-4">
-      <div className="w-full max-w-sm bg-white/80 backdrop-blur-xl p-8 rounded-3xl shadow-xl border border-pink-100 text-center animate-slide-up">
-        <div className="mx-auto w-16 h-16 bg-gradient-to-br from-pink-400 to-purple-400 rounded-full flex items-center justify-center mb-6 shadow-md">
-          <Heart className="text-white fill-white" size={32} />
+    <div className="min-h-screen bg-gradient-to-br from-pink-400 via-purple-500 to-indigo-600 flex items-center justify-center p-6">
+      <div className="w-full max-w-md bg-white/95 backdrop-blur rounded-[2rem] shadow-2xl p-10 animate-fade-in border border-white/20">
+        <div className="text-center mb-10">
+          <div className="w-20 h-20 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse shadow-inner">
+            <Heart className="text-pink-500 fill-pink-500" size={40} />
+          </div>
+          <h1 className="text-3xl font-black text-gray-800 tracking-tight">Angol Velem</h1>
+          <p className="text-gray-500 font-medium">Tanulj angolul szeretettel! 💕</p>
         </div>
-        <h1 className="text-2xl font-extrabold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent mb-1">
-          English With Love
-        </h1>
-        <p className="text-sm text-gray-500 mb-8">Tanulj angolul egy kis extrával 💕</p>
 
-        <form onSubmit={handleLogin} className="flex flex-col gap-4">
-          <input
-            type="email"
-            placeholder="Email cím"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-300 transition-all font-medium text-gray-700"
-            required
-          />
-          <input
-            type="password"
-            placeholder="Jelszó"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-300 transition-all font-medium text-gray-700"
-            required
-          />
-          {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-semibold border border-red-100 flex items-center gap-2 animate-bounce-in">
+            <div className="w-1 h-4 bg-red-400 rounded-full" />
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-6 py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:border-purple-300 focus:bg-white outline-none transition-all text-gray-700 font-medium shadow-sm"
+              placeholder="pelda@email.hu"
+              required
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Jelszó</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-6 py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:border-purple-300 focus:bg-white outline-none transition-all text-gray-700 font-medium shadow-sm"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 mt-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl font-bold shadow-md hover:shadow-lg transform active:scale-95 transition-all text-lg"
+            className="w-full py-4 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-2xl font-black text-lg shadow-lg hover:shadow-pink-300/40 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 mt-4"
           >
-            {loading ? "Bejelentkezés..." : "Belépés"}
+            {loading ? 'Belépés...' : 'Belépés'}
           </button>
         </form>
+
+        <div className="mt-8 relative h-px bg-gray-100 flex items-center justify-center">
+          <span className="bg-white px-4 text-xs font-bold text-gray-400 tracking-widest uppercase">Vagy</span>
+        </div>
+
+        <button
+          onClick={handleGoogle}
+          disabled={loading}
+          className="w-full mt-8 py-4 bg-white border-2 border-gray-100 text-gray-700 rounded-2xl font-bold flex items-center justify-center gap-3 hover:border-purple-300 hover:bg-purple-50 transition-all shadow-sm active:scale-95"
+        >
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
+          Belépés Google-lal
+        </button>
       </div>
     </div>
   );
@@ -811,12 +1043,9 @@ export default function App() {
     await setDoc(docRef, updates, { merge: true });
   };
 
-  const handleMarkKnown = (cardId) => {
+  const handleMarkKnown = (id, newStatus = 'known') => {
     updateFirebase({
-      vocabMap: {
-        ...userData.vocabMap,
-        [cardId]: 'known'
-      }
+      vocabMap: { ...userData.vocabMap, [id]: newStatus }
     });
   };
 
@@ -860,6 +1089,17 @@ export default function App() {
   };
 
 
+  const [loginError, setLoginError] = useState(null);
+
+  const handleEmailLogin = async (email, password) => {
+    setLoginError(null);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (err) {
+      setLoginError("Hibás email vagy jelszó. 😢");
+    }
+  };
+
   // ── Render States ─────────────────
   if (authChecking) {
     return (
@@ -870,7 +1110,7 @@ export default function App() {
   }
 
   if (!user && auth) {
-    return <LoginScreen />;
+    return <LoginScreen onLogin={handleEmailLogin} error={loginError} />;
   }
 
   // If Firebase isn't configured in .env at all
@@ -890,6 +1130,7 @@ export default function App() {
   const tabs = [
     { label: 'Szótár', icon: BookOpen },
     { label: 'Mondatok', icon: MessageCircle },
+    { label: 'Nyelvtan', icon: GraduationCap },
     { label: 'AI Gyakorlás', icon: Sparkles },
   ];
 
@@ -950,7 +1191,8 @@ export default function App() {
           />
         )}
         {activeTab === 1 && <PhrasesTab />}
-        {activeTab === 2 && <AiChatTab onNewFlashcard={handleNewFlashcard} />}
+        {activeTab === 2 && <GrammarTab />}
+        {activeTab === 3 && <AiChatTab onNewFlashcard={handleNewFlashcard} />}
       </main>
 
       <nav className="fixed bottom-0 inset-x-0 z-40 bg-white/80 backdrop-blur-xl border-t border-pink-100">
