@@ -9,29 +9,66 @@
 }
 
 /* ── Card flip ─────────────────────────────────────── */
-.perspective { perspective: 600px; }
+.perspective {
+  perspective: 600px;
+}
+
 .flip-inner {
-  transition: transform 0.6s cubic-bezier(.4,.2,.2,1);
+  transition: transform 0.6s cubic-bezier(.4, .2, .2, 1);
   transform-style: preserve-3d;
 }
-.flip-inner.flipped { transform: rotateY(180deg); }
-.flip-front, .flip-back { backface-visibility: hidden; }
-.flip-back { transform: rotateY(180deg); }
+
+.flip-inner.flipped {
+  transform: rotateY(180deg);
+}
+
+.flip-front,
+.flip-back {
+  backface-visibility: hidden;
+}
+
+.flip-back {
+  transform: rotateY(180deg);
+}
 
 /* ── Bounce animation ──────────────────────────────── */
 @keyframes bounceIn {
-  0%   { transform: scale(0.3); opacity: 0; }
-  50%  { transform: scale(1.08); }
-  70%  { transform: scale(0.95); }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+
+  50% {
+    transform: scale(1.08);
+  }
+
+  70% {
+    transform: scale(0.95);
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
-.animate-bounce-in { animation: bounceIn 0.5s ease-out; }
+
+.animate-bounce-in {
+  animation: bounceIn 0.5s ease-out;
+}
 
 /* ── Confetti particles ────────────────────────────── */
 @keyframes confettiFall {
-  0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
-  100% { transform: translateY(120px) rotate(720deg); opacity: 0; }
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(120px) rotate(720deg);
+    opacity: 0;
+  }
 }
+
 .confetti-piece {
   position: absolute;
   width: 8px;
@@ -42,23 +79,49 @@
 
 /* ── Pulse glow for mic ────────────────────────────── */
 @keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
-  50%      { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+  }
+
+  50% {
+    box-shadow: 0 0 0 12px rgba(239, 68, 68, 0);
+  }
 }
-.animate-pulse-glow { animation: pulseGlow 1.2s infinite; }
+
+.animate-pulse-glow {
+  animation: pulseGlow 1.2s infinite;
+}
 
 /* ── Slide up for chat messages ──────────────────── */
 @keyframes slideUp {
-  0%   { transform: translateY(12px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 1; }
+  0% {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
-.animate-slide-up { animation: slideUp 0.3s ease-out; }
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
 
 /* ── Progress bar shimmer ────────────────────────── */
 @keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
+
 .shimmer-bar {
   background: linear-gradient(90deg, #f9a8d4, #c084fc, #f9a8d4);
   background-size: 200% 100%;
@@ -66,6 +129,43 @@
 }
 
 /* ── Smooth scrollbar ────────────────────────────── */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #e9d5ff; border-radius: 999px; }
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #e9d5ff;
+  border-radius: 999px;
+}
+
+/* ── Main Content Hover Snail ─────────────────────── */
+.main-content-bg {
+  position: relative;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.8) 0%, rgba(243, 232, 255, 0.4) 100%);
+  transition: all 0.5s ease;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.main-content-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 24 24' fill='none' stroke='%23a855f7' stroke-width='0.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 13a6 6 0 1 0 12 0 4 4 0 1 0-8 0 2 2 0 1 0 4 0'/%3E%3Cpath d='m20 2.7 2 2.3'/%3E%3Cpath d='m22 2.7-2 2.3'/%3E%3Cpath d='M18 19c-2.8 2.2-7.6 2.2-10.4 0'/%3E%3Cpath d='M14 13h.01'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center 20%;
+  opacity: 0;
+  transform: scale(0.8) translateY(20px);
+  transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.main-content-bg:hover::before {
+  opacity: 0.07;
+  transform: scale(1.1) translateY(0);
+}

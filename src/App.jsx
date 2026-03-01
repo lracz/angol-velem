@@ -3,7 +3,7 @@ import {
   Heart, Volume2, Snail, Mic, MicOff, Send, BookOpen, MessageCircle,
   GraduationCap, ChevronLeft, ChevronRight, Check, X, RotateCcw,
   Sparkles, Coffee, Map, ShoppingCart, Phone, Star, Flame, Target, LogOut,
-  AlertTriangle, Lightbulb, Headphones
+  AlertTriangle, Lightbulb, Headphones, Trophy, Medal, TrendingUp, Languages, Gamepad2
 } from 'lucide-react';
 
 // ── Firebase Imports ───────────────────────────────────────────────
@@ -230,7 +230,7 @@ function SttButton({ targetWord, onResult }) {
 // TABS
 // ═══════════════════════════════════════════════════════════════════
 
-function VocabularyTab({ vocabMap, generatedCards, onMarkKnown, onResetAll, onProgress, sound }) {
+function VocabularyTab({ vocabMap, generatedCards, onMarkKnown, onResetAll, onProgress, sound, initialVocabulary = INITIAL_VOCABULARY }) {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
@@ -238,16 +238,13 @@ function VocabularyTab({ vocabMap, generatedCards, onMarkKnown, onResetAll, onPr
   const [showConfetti, setShowConfetti] = useState(false);
 
   // Combine base vocabulary + generated cards
-  const allCardsOriginal = useMemo(() => [
-    ...INITIAL_VOCABULARY,
-    ...generatedCards
-  ], [generatedCards]);
-
-  // Map state to cards
-  const allCards = useMemo(() => allCardsOriginal.map(c => ({
-    ...c,
-    status: vocabMap[c.id] || 'learning'
-  })), [allCardsOriginal, vocabMap]);
+  const allCards = useMemo(() => {
+    const combined = [...initialVocabulary, ...generatedCards];
+    return combined.map(c => ({
+      ...c,
+      status: vocabMap[c.id] || 'learning'
+    }));
+  }, [initialVocabulary, generatedCards, vocabMap]);
 
   // Derived state for selection
   const filteredCards = useMemo(() => {
@@ -322,9 +319,27 @@ function VocabularyTab({ vocabMap, generatedCards, onMarkKnown, onResetAll, onPr
   }
   const card = learningCards[displayIndex];
 
+  const audioRef = useRef(null);
+  useEffect(() => {
+    audioRef.current = new Audio();
+  }, []);
+
+  const playSound = (type) => {
+    if (!audioRef.current) return;
+    const sounds = {
+      correct: 'https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3',
+      wrong: 'https://assets.mixkit.co/active_storage/sfx/2010/2010-preview.mp3',
+      click: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',
+      flip: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'
+    };
+    audioRef.current.src = sounds[type];
+    audioRef.current.volume = 0.5; // Reduced volume to 50%
+    audioRef.current.play().catch(() => { });
+  };
+
   const handleKnow = () => {
     if (!card) return;
-    sound.playDing();
+    playSound('correct');
     setShowConfetti(true);
     setTimeout(() => setShowConfetti(false), 1200);
 
@@ -343,14 +358,14 @@ function VocabularyTab({ vocabMap, generatedCards, onMarkKnown, onResetAll, onPr
   };
 
   const handlePractice = () => {
-    sound.playSwoosh();
+    playSound('flip');
     setFlipped(false);
     setSttFeedback(null);
     setIndex(i => i + 1);
   };
 
   const handleFlip = () => {
-    sound.playSwoosh();
+    playSound('flip');
     setFlipped(f => !f);
   };
 
@@ -420,11 +435,18 @@ function VocabularyTab({ vocabMap, generatedCards, onMarkKnown, onResetAll, onPr
             <span className="text-5xl mb-3">{card.emoji}</span>
             <div className="flex flex-col items-center">
               <span className="text-2xl font-bold text-purple-800 text-center">{card.english}</span>
-              {card.phonetic && (
-                <span className="text-sm font-medium text-blue-500 bg-blue-50 px-3 py-0.5 rounded-full mt-1.5 flex items-center gap-1 shadow-sm">
-                  <Headphones size={12} /> /{card.phonetic}/
-                </span>
-              )}
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+                {card.phonetic && (
+                  <span className="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm border border-blue-100">
+                    IPA: /{card.phonetic}/
+                  </span>
+                )}
+                {card.hungarianPhonetic && (
+                  <span className="text-[10px] font-bold text-purple-500 bg-purple-50 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm border border-purple-100">
+                    Kiejtés: [{card.hungarianPhonetic}]
+                  </span>
+                )}
+              </div>
             </div>
             <span className="text-xs text-purple-400 mt-4">← Koppints vissza</span>
           </div>
@@ -488,7 +510,7 @@ function VocabularyTab({ vocabMap, generatedCards, onMarkKnown, onResetAll, onPr
   );
 }
 
-function PhrasesTab() {
+function PhrasesTab({ phrases = PHRASES }) {
   const [selectedCategory, setSelectedCategory] = useState(null);
 
   if (!selectedCategory) {
@@ -496,7 +518,7 @@ function PhrasesTab() {
       <div className="flex flex-col gap-3 animate-slide-up">
         <h2 className="text-xl font-bold text-gray-800 mb-2 px-1">Gyakori Helyzetek</h2>
         {PHRASE_CATEGORIES.map(cat => {
-          const catPhrases = PHRASES.filter(p => p.categoryId === cat.id);
+          const catPhrases = phrases.filter(p => p.categoryId === cat.id);
           if (catPhrases.length === 0) return null;
 
           return (
@@ -563,101 +585,250 @@ function PhrasesTab() {
   );
 }
 
-function GrammarTab() {
+function GrammarTab({ userData, onToggleLesson }) {
   const [selectedLesson, setSelectedLesson] = useState(null);
 
-  // Auto-scroll on lesson change
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [selectedLesson]);
-
-  if (!selectedLesson) {
+  if (selectedLesson) {
+    const isCompleted = userData?.completedLessons?.includes(selectedLesson.id);
     return (
-      <div className="flex flex-col gap-3 animate-slide-up">
-        <h2 className="text-xl font-bold text-gray-800 mb-2 px-1">Nyelvtani Alapok</h2>
-        <p className="text-sm text-gray-600 mb-2 px-1">Rövid, érthető magyarázatok a legfontosabb szabályokról.</p>
-        {GRAMMAR_LESSONS.map((lesson, idx) => (
+      <div className="space-y-6 animate-fade-in pb-20">
+        <button
+          onClick={() => setSelectedLesson(null)}
+          className="flex items-center gap-2 text-purple-600 font-bold hover:gap-3 transition-all"
+        >
+          <ChevronLeft size={20} /> Vissza a leckékhez
+        </button>
+
+        <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-purple-100 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-6 text-4xl opacity-20 pointer-events-none">{selectedLesson.emoji}</div>
+          <h2 className="text-3xl font-black text-gray-800 mb-6">{selectedLesson.title}</h2>
+
+          <div className="prose prose-purple max-w-none mb-8">
+            <div className="relative z-10 text-gray-700 text-sm leading-relaxed space-y-4 bg-purple-50/50 p-6 rounded-3xl border border-purple-100">
+              {selectedLesson.theory.split('\n\n').map((para, i) => (
+                <p key={i} dangerouslySetInnerHTML={{
+                  __html: para.replace(/\*\*([^*]+)\*\*/g, '<strong class="text-purple-700">$1</strong>')
+                }} />
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-amber-50 rounded-3xl p-6 border border-amber-100 mb-8">
+            <h3 className="text-amber-800 font-black flex items-center gap-2 mb-2 text-sm">
+              <AlertTriangle size={18} /> Vigyázz! (Common Pitfall)
+            </h3>
+            <p className="text-amber-700 font-medium text-sm leading-snug">{selectedLesson.pitfall}</p>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-xl font-black text-gray-800 flex items-center gap-2">
+              <Sparkles className="text-yellow-500" size={24} /> Példák
+            </h3>
+            <div className="grid gap-3">
+              {selectedLesson.examples.map((ex, idx) => (
+                <div key={idx} className="bg-white border-2 border-purple-50 p-4 rounded-2xl shadow-sm hover:border-purple-200 transition-colors">
+                  <p className="text-lg font-black text-purple-800">{ex.english}</p>
+                  <p className="text-sm font-bold text-gray-400 mt-1">{ex.hungarian}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <button
-            key={lesson.id}
-            onClick={() => setSelectedLesson(lesson)}
-            className="flex items-center gap-4 bg-white/80 backdrop-blur rounded-2xl p-4 shadow-sm border border-purple-50 hover:shadow-md hover:border-purple-200 transition-all text-left"
+            onClick={() => {
+              onToggleLesson(selectedLesson.id);
+              setSelectedLesson(null);
+            }}
+            className={`w-full mt-10 py-4 rounded-2xl font-black text-lg shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 ${isCompleted
+              ? 'bg-gray-100 text-gray-400'
+              : 'bg-gradient-to-r from-green-400 to-emerald-500 text-white shadow-green-200'
+              }`}
           >
-            <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-xl flex-shrink-0">
-              {lesson.emoji}
-            </div>
-            <div className="flex-1">
-              <span className="text-xs font-bold text-purple-400 tracking-wide uppercase">Lecke {idx + 1}</span>
-              <p className="font-bold text-gray-700 text-lg">{lesson.title}</p>
-            </div>
-            <ChevronRight size={20} className="text-gray-300" />
+            {isCompleted ? <RotateCcw size={20} /> : <Check size={20} />}
+            {isCompleted ? 'Újratanulom ezt a leckét' : 'Megértettem és kész!'}
           </button>
-        ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4 animate-slide-up pb-6">
-      <div className="flex items-center mb-1">
-        <button onClick={() => setSelectedLesson(null)} className="p-2 text-purple-600 hover:bg-purple-50 rounded-full transition-colors shrink-0">
-          <ChevronLeft size={24} />
-        </button>
-        <h3 className="font-bold text-gray-800 text-lg text-center flex-1 pr-10">{selectedLesson.title}</h3>
+    <div className="space-y-6 animate-fade-in pb-20">
+      <div className="px-2">
+        <h2 className="text-3xl font-black text-gray-800">Angol Nyelvtan</h2>
+        <p className="text-gray-500 font-medium">Minden, amit az alapokhoz tudni kell 📚</p>
       </div>
 
-      <div className="bg-white rounded-3xl p-6 shadow-sm border border-purple-100 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4 text-6xl opacity-10 pointer-events-none">
-          {selectedLesson.emoji}
-        </div>
-
-        {/* Render markdown-like theory */}
-        <div className="relative z-10 text-gray-700 text-sm leading-relaxed space-y-4">
-          {selectedLesson.theory.split('\n\n').map((para, i) => (
-            <p key={i} dangerouslySetInnerHTML={{
-              __html: para.replace(/\*\*([^*]+)\*\*/g, '<strong class="text-purple-700">$1</strong>')
-            }} />
-          ))}
-        </div>
-
-        {/* Common Pitfalls Section */}
-        {selectedLesson.pitfall && (
-          <div className="mt-6 p-4 bg-amber-50 rounded-2xl border border-amber-100 animate-fade-in">
-            <h5 className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-              <AlertTriangle size={14} /> Vigyázz! (Common Pitfall)
-            </h5>
-            <p className="text-sm text-amber-800 font-medium leading-snug">{selectedLesson.pitfall}</p>
-          </div>
-        )}
-      </div>
-
-      <h4 className="font-bold text-gray-800 mt-2 px-1 flex items-center gap-2">
-        <GraduationCap size={18} className="text-purple-500" />
-        Példamondatok
-      </h4>
-
-      <div className="space-y-3">
-        {selectedLesson.examples.map((ex, i) => (
-          <div key={i} className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-4 border border-purple-100 flex items-center justify-between gap-3">
-            <div className="flex-1">
-              <p className="font-bold text-gray-800">{ex.english}</p>
-              <p className="text-sm text-gray-500 mt-1">{ex.hungarian}</p>
-            </div>
+      <div className="grid gap-4">
+        {GRAMMAR_LESSONS.map((lesson) => {
+          const isCompleted = userData?.completedLessons?.includes(lesson.id);
+          return (
             <button
-              onClick={() => speak(ex.english, 0.9)}
-              className="p-3 rounded-full bg-white text-purple-600 shadow-sm hover:shadow-md transition-all shrink-0"
+              key={lesson.id}
+              onClick={() => setSelectedLesson(lesson)}
+              className="w-full bg-white p-6 rounded-[2rem] shadow-sm border border-purple-50 hover:shadow-md hover:border-purple-200 transition-all flex items-center gap-5 text-left group relative overflow-hidden"
             >
-              <Volume2 size={18} />
+              {isCompleted && (
+                <div className="absolute top-0 right-0 bg-green-400 text-white px-3 py-1 rounded-bl-xl text-[10px] font-black uppercase tracking-widest">
+                  Kész
+                </div>
+              )}
+              <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform shadow-inner text-purple-600">
+                {lesson.emoji}
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-gray-800 mb-1">{lesson.title}</h3>
+                <p className="text-sm text-gray-400 font-medium whitespace-nowrap overflow-hidden text-ellipsis">Kattints a részletekért</p>
+              </div>
+              <ChevronRight className="text-purple-200 group-hover:text-purple-400 transform group-hover:translate-x-1 transition-all" />
             </button>
-          </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SentencePuzzle({ phrases, sound }) {
+  const [index, setIndex] = useState(0);
+  const [scrambledWords, setScrambledWords] = useState([]);
+  const [selectedWords, setSelectedWords] = useState([]);
+  const [isCorrect, setIsCorrect] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [showHint, setShowHint] = useState(false);
+
+  const phrase = useMemo(() => phrases[index % phrases.length], [phrases, index]);
+
+  const initPuzzle = useCallback(() => {
+    if (!phrase) return;
+    const words = phrase.english.split(' ');
+    // Simple shuffle
+    const shuffled = [...words].sort(() => Math.random() - 0.5);
+    setScrambledWords(shuffled.map((w, i) => ({ id: i, text: w })));
+    setSelectedWords([]);
+    setIsCorrect(false);
+  }, [phrase]);
+
+  useEffect(() => {
+    initPuzzle();
+    setShowHint(false);
+  }, [initPuzzle]);
+
+  const handleWordClick = (wordObj) => {
+    if (isCorrect) return;
+    const newSelected = [...selectedWords, wordObj];
+    setSelectedWords(newSelected);
+    setScrambledWords(scrambledWords.filter(w => w.id !== wordObj.id));
+
+    // Check if sentence is complete
+    if (newSelected.length === phrase.english.split(' ').length) {
+      const result = newSelected.map(w => w.text).join(' ');
+      if (result.toLowerCase() === phrase.english.toLowerCase()) {
+        setIsCorrect(true);
+        sound.playDing();
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 2000);
+      } else {
+        // Mistake - reset
+        setTimeout(() => {
+          initPuzzle();
+        }, 800);
+      }
+    }
+  };
+
+  const resetWord = (wordObj) => {
+    if (isCorrect) return;
+    setSelectedWords(selectedWords.filter(w => w.id !== wordObj.id));
+    setScrambledWords([...scrambledWords, wordObj]);
+  };
+
+  if (!phrase) return null;
+
+  return (
+    <div className="flex flex-col items-center gap-6 animate-slide-up py-4">
+      <div className="text-center space-y-2">
+        <h2 className="text-xl font-bold text-gray-800">Mondatrakó</h2>
+        <p className="text-sm text-gray-500">Rakd össze a mondatot helyes sorrendben!</p>
+      </div>
+
+      <Confetti active={showConfetti} />
+
+      <div className="w-full bg-white/60 backdrop-blur-sm rounded-3xl p-6 shadow-inner border border-purple-100 min-h-[140px] flex flex-wrap gap-2 items-center justify-center relative">
+        <div className="absolute top-2 left-4 text-[10px] font-bold text-purple-300 uppercase tracking-widest">A mondat helye</div>
+
+        {/* Hint Section */}
+        <div className="w-full text-center">
+          <p className="text-gray-400 font-medium mb-1 italic text-xs">"{phrase.hungarian}"</p>
+          {showHint && (
+            <div className="p-2 bg-amber-50 rounded-xl border border-amber-100 mb-3 animate-fade-in">
+              <p className="text-[11px] text-amber-600 font-bold uppercase tracking-wider mb-0.5">Súgó: Mi a következő szó?</p>
+              <p className="text-sm font-black text-amber-800">
+                {phrase.english.split(' ')[selectedWords.length] || 'Kész!'}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {selectedWords.map((w, idx) => (
+          <button
+            key={idx}
+            onClick={() => resetWord(w)}
+            className={`px-3 py-1.5 rounded-xl font-bold shadow-sm transition-all transform active:scale-95 text-sm ${isCorrect ? 'bg-green-500 text-white' : 'bg-purple-600 text-white hover:bg-purple-700'
+              }`}
+          >
+            {w.text}
+          </button>
         ))}
       </div>
 
-      <button
-        onClick={() => setSelectedLesson(null)}
-        className="mt-4 py-3 bg-purple-100 text-purple-700 font-bold rounded-2xl hover:bg-purple-200 transition-colors"
-      >
-        Vissza a leckékhez
-      </button>
+      <div className="flex flex-wrap gap-2 justify-center mt-4">
+        {scrambledWords.map((w) => (
+          <button
+            key={w.id}
+            onClick={() => handleWordClick(w)}
+            disabled={isCorrect}
+            className="px-4 py-2 bg-white text-gray-700 rounded-xl font-bold shadow-md border border-gray-100 hover:border-purple-300 hover:shadow-lg transition-all transform active:scale-95"
+          >
+            {w.text}
+          </button>
+        ))}
+      </div>
+
+      {isCorrect && (
+        <div className="flex flex-col items-center gap-4 animate-bounce-in mt-6">
+          <div className="px-6 py-2 bg-green-100 text-green-700 rounded-full font-bold text-lg">
+            Szuper! ✨
+          </div>
+          <button
+            onClick={() => setIndex(i => i + 1)}
+            className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-bold shadow-xl hover:scale-105 active:scale-95 transition-all"
+          >
+            Következő <ChevronRight size={20} />
+          </button>
+        </div>
+      )}
+
+      {!isCorrect && (
+        <div className="flex gap-4 mt-4">
+          <button
+            onClick={() => setShowHint(!showHint)}
+            className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all ${showHint ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-gray-50 text-gray-500 border border-gray-100 hover:bg-amber-50 hover:text-amber-600'
+              }`}
+          >
+            <Lightbulb size={14} /> {showHint ? 'Súgó elrejtése' : 'Kérek egy súgót'}
+          </button>
+
+          {selectedWords.length > 0 && (
+            <button
+              onClick={initPuzzle}
+              className="px-4 py-2 text-xs font-bold text-gray-400 hover:text-purple-500 flex items-center gap-1 transition-colors"
+            >
+              <RotateCcw size={14} /> Újrakezdés
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -740,8 +911,10 @@ function AiChatTab({ onNewFlashcard }) {
       return data.candidates?.[0]?.content?.parts?.[0]?.text || '{"reply": "I\'m here to help! 😊"}';
     } catch (err) {
       console.warn("Primary Gemini key failed, trying secondary if available...", err);
-      if (secondaryKey && err.message.includes('429')) {
-        // Fallback attempt with secondary key specifically on 429 (rate limit)
+      // Fallback if secondary exists AND error is 429 (rate limit) or 403 (invalid/leaked key)
+      const shouldRetry = err.message.includes('429') || err.message.includes('403');
+
+      if (secondaryKey && shouldRetry) {
         try {
           const fallbackData = await executeFetch(secondaryKey);
           return fallbackData.candidates?.[0]?.content?.parts?.[0]?.text || '{"reply": "I\'m here to help! 😊"}';
@@ -764,8 +937,12 @@ function AiChatTab({ onNewFlashcard }) {
       const resp = await callGemini(systemPrompt, []);
       const { reply } = parseAiResponse(resp);
       setMessages([{ role: 'ai', text: reply }]);
-    } catch {
-      setError('Hoppá! Az AI éppen nem elérhető. Próbáld újra! 🔄');
+    } catch (err) {
+      if (err.message.includes('429')) {
+        setError('Az AI tanár éppen túl elfoglalt (429). Kérlek várj egy percet! ☕');
+      } else {
+        setError('Hoppá! Az AI éppen nem elérhető. Próbáld újra! 🔄');
+      }
     } finally {
       setLoading(false);
     }
@@ -787,8 +964,12 @@ function AiChatTab({ onNewFlashcard }) {
       const { reply, flashcard } = parseAiResponse(resp);
       if (flashcard) onNewFlashcard(flashcard);
       setMessages(prev => [...prev, { role: 'ai', text: reply }]);
-    } catch {
-      setError('Az AI nem válaszol. Ellenőrizd az interneted! 🌐');
+    } catch (err) {
+      if (err.message.includes('429')) {
+        setError('Sok kérést küldtél, az AI pihen egy kicsit. Várj pár percet! 💤');
+      } else {
+        setError('Az AI nem válaszol. Ellenőrizd az interneted! 🌐');
+      }
     } finally {
       setLoading(false);
     }
@@ -805,13 +986,13 @@ function AiChatTab({ onNewFlashcard }) {
           <button
             key={sc.id}
             onClick={() => startScenario(sc)}
-            className="flex items-center gap-3 bg-white/80 backdrop-blur rounded-2xl p-4 shadow-sm border border-purple-50 hover:shadow-md hover:border-purple-200 transition-all"
+            className="flex items-center gap-3 bg-white/80 backdrop-blur rounded-2xl p-4 shadow-sm border border-purple-50 hover:shadow-md hover:border-purple-200 transition-all text-left"
           >
             <sc.icon size={24} className="text-purple-500 flex-shrink-0" />
             <span className="font-bold text-gray-700">{sc.label}</span>
           </button>
         ))}
-        {!apiKey && (
+        {!primaryKey && (
           <div className="mt-2 p-3 bg-amber-50 rounded-2xl border border-amber-200 text-sm text-amber-700 text-center">
             ⚠️ Az AI-hoz add hozzá a Gemini API kulcsot a <code className="bg-amber-100 px-1 rounded">.env</code> fájlban!
           </div>
@@ -866,6 +1047,117 @@ function AiChatTab({ onNewFlashcard }) {
     </div>
   );
 }
+// ═══════════════════════════════════════════════════════════════════
+// PROGRESSION TAB
+// ═══════════════════════════════════════════════════════════════════
+function ProgressionTab({ userData, vocabulary, grammarLessons }) {
+  const vocabProgress = useMemo(() => {
+    if (!vocabulary.length) return 0;
+    const knownCount = vocabulary.filter(v => userData?.vocabMap?.[v.id] === 'known').length;
+    return Math.round((knownCount / vocabulary.length) * 100);
+  }, [vocabulary, userData]);
+
+  const grammarProgress = useMemo(() => {
+    if (!grammarLessons.length) return 0;
+    const completedCount = userData?.completedLessons?.length || 0;
+    return Math.round((completedCount / grammarLessons.length) * 100);
+  }, [grammarLessons, userData]);
+
+  const categoryStats = useMemo(() => {
+    const stats = {};
+    vocabulary.forEach(v => {
+      if (!stats[v.categoryId]) stats[v.categoryId] = { total: 0, known: 0 };
+      stats[v.categoryId].total++;
+      if (userData?.vocabMap?.[v.id] === 'known') stats[v.categoryId].known++;
+    });
+    return stats;
+  }, [vocabulary, userData]);
+
+  return (
+    <div className="space-y-8 animate-fade-in pb-20">
+      <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-[2.5rem] p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+        <div className="relative z-10">
+          <h2 className="text-3xl font-black mb-2 flex items-center gap-3">
+            <Trophy className="text-yellow-300" size={32} /> Szintlépésed
+          </h2>
+          <p className="text-purple-100 font-medium">Lássuk, mennyit fejlődtél ma! 🚀</p>
+
+          <div className="grid grid-cols-2 gap-6 mt-8">
+            <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/20">
+              <p className="text-xs font-bold uppercase tracking-widest text-purple-200 mb-2">Szókincs</p>
+              <div className="flex items-end gap-2">
+                <span className="text-4xl font-black">{vocabProgress}%</span>
+                <span className="text-sm font-bold text-purple-200 mb-1">kész</span>
+              </div>
+              <div className="w-full h-2 bg-white/20 rounded-full mt-4 overflow-hidden">
+                <div
+                  className="h-full bg-yellow-400 transition-all duration-1000 ease-out"
+                  style={{ width: `${vocabProgress}%` }}
+                />
+              </div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/20">
+              <p className="text-xs font-bold uppercase tracking-widest text-purple-200 mb-2">Nyelvtan</p>
+              <div className="flex items-end gap-2">
+                <span className="text-4xl font-black">{grammarProgress}%</span>
+                <span className="text-sm font-bold text-purple-200 mb-1">pipa</span>
+              </div>
+              <div className="w-full h-2 bg-white/20 rounded-full mt-4 overflow-hidden">
+                <div
+                  className="h-full bg-green-400 transition-all duration-1000 ease-out"
+                  style={{ width: `${grammarProgress}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="text-xl font-black text-gray-800 flex items-center gap-2 px-2">
+          <Target className="text-pink-500" size={24} /> Kategóriák állapota
+        </h3>
+        <div className="grid gap-4">
+          {CATEGORIES.map(cat => {
+            const stat = categoryStats[cat.id] || { total: 0, known: 0 };
+            const percent = stat.total > 0 ? Math.round((stat.known / stat.total) * 100) : 0;
+            return (
+              <div key={cat.id} className="bg-white rounded-3xl p-5 shadow-sm border border-purple-50 flex items-center gap-4 hover:shadow-md transition-shadow">
+                <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                  {stat.known === stat.total && stat.total > 0 ? '✅' : '📖'}
+                </div>
+                <div className="flex-1">
+                  <div className="flex justify-between items-end mb-2">
+                    <span className="font-bold text-gray-800">{cat.name}</span>
+                    <span className="text-xs font-black text-purple-400">{stat.known}/{stat.total} szó</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full transition-all duration-700 ${percent === 100 ? 'bg-green-400' : 'bg-purple-400'}`}
+                      style={{ width: `${percent}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="bg-amber-50 rounded-[2rem] p-6 border border-amber-100">
+        <h3 className="text-lg font-black text-amber-800 flex items-center gap-2 mb-2">
+          <Medal className="text-amber-500" size={24} /> Következő mérföldkő
+        </h3>
+        <p className="text-sm text-amber-700 font-medium">
+          {vocabProgress < 100
+            ? `Tanulj meg még ${vocabulary.length - vocabulary.filter(v => userData?.vocabMap?.[v.id] === 'known').length} szót az alapvető szókincshez!`
+            : "Gratulálunk! Te már egy igazi profi vagy! Folytasd az AI beszélgetésekkel! 🎓"}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 // ═══════════════════════════════════════════════════════════════════
 // AUTH SCREEN
@@ -874,6 +1166,12 @@ function LoginScreen({ onLogin, error }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [localError, setLocalError] = useState(null);
+
+  // Sync external errors (like handled in App component)
+  useEffect(() => {
+    if (error) setLocalError(error);
+  }, [error]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -882,12 +1180,24 @@ function LoginScreen({ onLogin, error }) {
   };
 
   const handleGoogle = async () => {
+    if (!auth) {
+      setLocalError("A Firebase nincs beállítva. Ellenőrizd a .env fájlt!");
+      return;
+    }
+    setLocalError(null);
     setLoading(true);
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
     } catch (err) {
       console.error("Google login error:", err);
+      if (err.code === 'auth/popup-blocked') {
+        setLocalError("A böngésződ blokkolta a felugró ablakot. Engedélyezd a pop-upokat!");
+      } else if (err.code === 'auth/operation-not-supported') {
+        setLocalError("A Google bejelentkezés nincs engedélyezve a Firebase konzolban!");
+      } else {
+        setLocalError("Hiba történt a Google belépés során. Próbáld újra!");
+      }
       setLoading(false);
     }
   };
@@ -903,10 +1213,10 @@ function LoginScreen({ onLogin, error }) {
           <p className="text-gray-500 font-medium">Tanulj angolul szeretettel! 💕</p>
         </div>
 
-        {error && (
+        {localError && (
           <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-semibold border border-red-100 flex items-center gap-2 animate-bounce-in">
             <div className="w-1 h-4 bg-red-400 rounded-full" />
-            {error}
+            {localError}
           </div>
         )}
 
@@ -973,10 +1283,21 @@ export default function App() {
     generatedCards: [], // AI flashcards
     dailyProgress: { date: new Date().toDateString(), count: 0 },
     streak: 0,
+    completedLessons: [], // New: for grammar lessons
   });
 
-  const [activeTab, setActiveTab] = useState(0);
-  const sound = useSound();
+  const [activeTab, setActiveTab] = useState('vocabulary'); // Changed initial tab
+  const sound = useSound(); // Keep useSound for now, though VocabularyTab uses its own audioRef
+
+  const combinedPhrases = useMemo(() => {
+    const aiPhrases = userData.generatedCards.filter(c => c.type === 'phrase' || (c.english && c.english.split(' ').length > 1));
+    return [...PHRASES, ...aiPhrases];
+  }, [userData.generatedCards]);
+
+  const combinedVocabulary = useMemo(() => {
+    const aiWords = userData.generatedCards.filter(c => c.type === 'word' || (c.english && c.english.split(' ').length === 1));
+    return [...INITIAL_VOCABULARY, ...aiWords];
+  }, [userData.generatedCards]);
 
   // 1. Auth Listener
   useEffect(() => {
@@ -1019,6 +1340,7 @@ export default function App() {
           generatedCards: data.generatedCards || [],
           dailyProgress: dbDaily,
           streak: dbStreak,
+          completedLessons: data.completedLessons || [], // New: for grammar lessons
         });
       } else {
         // Initialize new user document
@@ -1027,6 +1349,7 @@ export default function App() {
           generatedCards: [],
           dailyProgress: { date: new Date().toDateString(), count: 0 },
           streak: 0,
+          completedLessons: [], // New: for grammar lessons
         };
         setDoc(docRef, initialData);
         setUserData(initialData);
@@ -1047,6 +1370,15 @@ export default function App() {
     updateFirebase({
       vocabMap: { ...userData.vocabMap, [id]: newStatus }
     });
+  };
+
+  const handleToggleLesson = (id) => {
+    const isCompleted = userData.completedLessons.includes(id);
+    const newList = isCompleted
+      ? userData.completedLessons.filter(l => l !== id)
+      : [...userData.completedLessons, id];
+
+    updateFirebase({ completedLessons: newList });
   };
 
   const handleResetAll = () => {
@@ -1128,10 +1460,12 @@ export default function App() {
   const DAILY_GOAL = 10;
   const progressPct = Math.min((userData.dailyProgress.count / DAILY_GOAL) * 100, 100);
   const tabs = [
-    { label: 'Szótár', icon: BookOpen },
-    { label: 'Mondatok', icon: MessageCircle },
-    { label: 'Nyelvtan', icon: GraduationCap },
-    { label: 'AI Gyakorlás', icon: Sparkles },
+    { id: 'vocabulary', label: 'Szótár', icon: BookOpen },
+    { id: 'phrases', label: 'Mondatok', icon: Languages },
+    { id: 'practice', label: 'Gyakorlat', icon: Gamepad2 },
+    { id: 'grammar', label: 'Nyelvtan', icon: GraduationCap },
+    { id: 'chat', label: 'AI Gyakorlás', icon: Sparkles },
+    { id: 'progress', label: 'Haladás', icon: TrendingUp },
   ];
 
   return (
@@ -1172,15 +1506,15 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-4 py-5 pb-24">
+      <main className="max-w-lg mx-auto px-4 py-5 pb-24 main-content-bg">
         {/* Show generated cards notification only on the AI tab to prevent annoying popups in flashcards */}
-        {userData.generatedCards.length > 0 && activeTab === 2 && (
+        {userData.generatedCards.length > 0 && activeTab === 'chat' && (
           <div className="mb-4 px-4 py-2.5 bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl border border-purple-200 text-sm text-purple-700 text-center animate-slide-up">
             ✨ Eddig {userData.generatedCards.length} extra kártyát tanultál meg az AI-tól!
           </div>
         )}
 
-        {activeTab === 0 && (
+        {activeTab === 'vocabulary' && (
           <VocabularyTab
             vocabMap={userData.vocabMap}
             generatedCards={userData.generatedCards}
@@ -1188,24 +1522,38 @@ export default function App() {
             onResetAll={handleResetAll}
             onProgress={handleProgress}
             sound={sound}
+            initialVocabulary={combinedVocabulary}
           />
         )}
-        {activeTab === 1 && <PhrasesTab />}
-        {activeTab === 2 && <GrammarTab />}
-        {activeTab === 3 && <AiChatTab onNewFlashcard={handleNewFlashcard} />}
+        {activeTab === 'phrases' && <PhrasesTab phrases={combinedPhrases} />}
+        {activeTab === 'grammar' && (
+          <GrammarTab
+            userData={userData}
+            onToggleLesson={handleToggleLesson}
+          />
+        )}
+        {activeTab === 'practice' && <SentencePuzzle phrases={combinedPhrases} sound={sound} />}
+        {activeTab === 'chat' && <AiChatTab onNewFlashcard={handleNewFlashcard} />}
+        {activeTab === 'progress' && (
+          <ProgressionTab
+            userData={userData}
+            vocabulary={combinedVocabulary}
+            grammarLessons={GRAMMAR_LESSONS}
+          />
+        )}
       </main>
 
       <nav className="fixed bottom-0 inset-x-0 z-40 bg-white/80 backdrop-blur-xl border-t border-pink-100">
         <div className="max-w-lg mx-auto flex">
-          {tabs.map((tab, i) => (
+          {tabs.map((tab) => (
             <button
-              key={i}
-              onClick={() => setActiveTab(i)}
-              className={`flex-1 flex flex-col items-center gap-0.5 py-3 transition-all duration-200 ${activeTab === i ? 'text-purple-600' : 'text-gray-400 hover:text-gray-600'}`}
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 flex flex-col items-center gap-0.5 py-3 transition-all duration-200 ${activeTab === tab.id ? 'text-purple-600' : 'text-gray-400 hover:text-gray-600'}`}
             >
-              <tab.icon size={20} className={activeTab === i ? 'scale-110' : ''} />
+              <tab.icon size={20} className={activeTab === tab.id ? 'scale-110' : ''} />
               <span className="text-[10px] font-bold">{tab.label}</span>
-              {activeTab === i && <div className="w-1 h-1 rounded-full bg-purple-500 mt-0.5" />}
+              {activeTab === tab.id && <div className="w-1 h-1 rounded-full bg-purple-500 mt-0.5" />}
             </button>
           ))}
         </div>
