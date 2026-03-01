@@ -50,12 +50,23 @@ export const QUEST_TYPES = [
     { type: 'vocab_review', text: 'Tökéletes ismétlő: {target} hiba nélkül', min: 5, max: 10, xp: 90 },
 ];
 
-export const generateDailyQuests = () => {
+export const generateDailyQuests = (userLevel = 1) => {
     const selected = [];
     const types = [...QUEST_TYPES];
-    for (let i = 0; i < 50; i++) {
+
+    // Difficulty multiplier: 1 at level 1, approx 2 at level 50
+    const multiplier = 1 + (Math.max(0, userLevel - 1) * 0.02);
+
+    for (let i = 0; i < 5; i++) {
         const qType = types[Math.floor(Math.random() * types.length)];
-        const target = Math.floor(Math.random() * (qType.max - qType.min + 1)) + qType.min;
+
+        const scaledMin = Math.ceil(qType.min * multiplier);
+        const scaledMax = Math.ceil(qType.max * multiplier);
+        const target = Math.floor(Math.random() * (scaledMax - scaledMin + 1)) + scaledMin;
+
+        // Scale XP reward with target increase (roughly proportional)
+        const scaledXp = Math.round(qType.xp * (1 + (multiplier - 1) * 0.5));
+
         selected.push({
             id: `q_${Date.now()}_${i}`,
             type: qType.type,
@@ -63,7 +74,7 @@ export const generateDailyQuests = () => {
             current: 0,
             done: false,
             text: qType.text.replace('{target}', target),
-            xp: qType.xp
+            xp: scaledXp
         });
     }
     return selected;

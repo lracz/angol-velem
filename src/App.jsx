@@ -179,11 +179,12 @@ export default function App() {
         let dbStreak = data.streak || 0;
 
         if (dbDaily.date !== today) {
-          if (dbDaily.count >= 50) dbStreak += 1;
+          const reqXp = 50 + ((data.level || 1) * 5);
+          if (dbDaily.count >= reqXp) dbStreak += 1;
           else if (dbDaily.count === 0) dbStreak = 0;
           dbDaily = { date: today, count: 0 };
 
-          const newQuests = generateDailyQuests();
+          const newQuests = generateDailyQuests(data.level || 1);
           // Decrease snail levels by 25% each day
           const newFoodLevel = Math.max(0, (data.snailFoodLevel ?? 100) - 25);
           const newWaterLevel = Math.max(0, (data.snailWaterLevel ?? 100) - 25);
@@ -236,7 +237,7 @@ export default function App() {
           completedLessons: [],
           xp: 0,
           level: 1,
-          quests: initialQuests,
+          quests: generateDailyQuests(1),
           practiceIndex: 0,
           listeningIndex: 0,
           redeemedCoupons: [],

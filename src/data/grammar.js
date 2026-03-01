@@ -20,7 +20,11 @@ export const GRAMMAR_LESSONS = [
         ],
         quiz: [
             { question: "Melyik a helyes forma?", options: ["He are a teacher.", "He is a teacher.", "He am a teacher."], correct: 1 },
-            { question: "Hogy mondod helyesen: 'Otthon vannak'?", options: ["They is at home.", "They are at home.", "They at home."], correct: 1 }
+            { question: "Hogy mondod helyesen: 'Otthon vannak'?", options: ["They is at home.", "They are at home.", "They at home."], correct: 1 },
+            { question: "Melyik a helyes tagadás?", options: ["I am not happy.", "I not am happy.", "I am no happy."], correct: 0 },
+            { question: "Válassz: '____ you ready?'", options: ["Is", "Am", "Are"], correct: 2 },
+            { question: "Helyes a mondat: 'She is a student.'?", options: ["Igen", "Nem, 'She are' kell.", "Nem, 'She am' kell."], correct: 0 },
+            { question: "Melyik a kérdő alak?", options: ["You are happy?", "Are you happy?", "Happy are you?"], correct: 1 }
         ]
     },
     {
@@ -42,7 +46,11 @@ export const GRAMMAR_LESSONS = [
         ],
         quiz: [
             { question: "Melyik mondat nyelvtanilag helyes?", options: ["She have got a cat.", "She has got a cat.", "She got a cat."], correct: 1 },
-            { question: "Mit jelent: 'Have you got a car?'", options: ["Van egy autód?", "Vezetsz autót?", "Ez a te autód?"], correct: 0 }
+            { question: "Mit jelent: 'Have you got a car?'", options: ["Van egy autód?", "Vezetsz autót?", "Ez a te autód?"], correct: 0 },
+            { question: "Melyik a helyes tagadás?", options: ["I have not got a dog.", "I haven't got a dog.", "Mindkettő helyes."], correct: 2 },
+            { question: "Birtoklás E/3-ban:", options: ["He have got", "He has got", "He has get"], correct: 1 },
+            { question: "Kérdés feltevése:", options: ["You have got a pen?", "Have you got a pen?", "Has you got a pen?"], correct: 1 },
+            { question: "Rövidített alak (Péternek van):", options: ["Peter's got", "Peter have got", "Peter've got"], correct: 0 }
         ]
     },
     {
@@ -64,7 +72,11 @@ export const GRAMMAR_LESSONS = [
         ],
         quiz: [
             { question: "Hogyan mondod: 'Minden nap dolgozik (fiú)'?", options: ["He work every day.", "He works every day.", "He is working every day."], correct: 1 },
-            { question: "Melyik a helyes tagadás?", options: ["I not like coffee.", "I don't like coffee.", "I doesn't like coffee."], correct: 1 }
+            { question: "Melyik a helyes tagadás?", options: ["I not like coffee.", "I don't like coffee.", "I doesn't like coffee."], correct: 1 },
+            { question: "Kérdés E/3-ban (ő):", options: ["Do she speak English?", "Does she speak English?", "Is she speak English?"], correct: 1 },
+            { question: "Melyik a helyes forma?", options: ["They lives here.", "They live here.", "They is live here."], correct: 1 },
+            { question: "Helyes-e: 'He plays football'?", options: ["Igen, mert E/3-ban -s kell.", "Nem, 'He play' kell.", "Csak akkor, ha most csinálja."], correct: 0 },
+            { question: "Melyik segédige kell tagadáshoz E/3-ban?", options: ["don't", "doesn't", "not"], correct: 1 }
         ]
     },
     {
@@ -83,7 +95,11 @@ export const GRAMMAR_LESSONS = [
         ],
         quiz: [
             { question: "Melyik helyes?", options: ["A apple", "An apple", "The apple (általánosságban)"], correct: 1 },
-            { question: "Helyes a mondat? 'I wait for an hour.'", options: ["Nem, 'a hour' kell.", "Igen, mert h-val kezdődik, de magánhangzónak ejtjük."], correct: 1 }
+            { question: "Helyes a mondat? 'I wait for an hour.'", options: ["Nem, 'a hour' kell.", "Igen, mert h-val kezdődik, de magánhangzónak ejtjük."], correct: 1 },
+            { question: "Mielőtt kimondod: '____ orange'?", options: ["a", "an", "the"], correct: 1 },
+            { question: "Egy konkrét autó, amiről már beszéltünk:", options: ["a car", "an car", "the car"], correct: 2 },
+            { question: "Melyik a kakukktojás (mássalhangzóval kezdődik)?", options: ["university (u=j)", "umbrella", "uncle"], correct: 0 },
+            { question: "Válassz: '____ honest man' (h nem hangzik)", options: ["a", "an", "the"], correct: 1 }
         ]
     },
     {
@@ -101,7 +117,11 @@ export const GRAMMAR_LESSONS = [
         ],
         quiz: [
             { question: "Mi a 'child' (gyerek) többes száma?", options: ["childs", "childes", "children"], correct: 2 },
-            { question: "Melyik a nyelvtanilag helyes: 'The people...'", options: ["is happy", "are happy", "be happy"], correct: 1 }
+            { question: "Melyik a nyelvtanilag helyes: 'The people...'", options: ["is happy", "are happy", "be happy"], correct: 1 },
+            { question: "Többes szám: 'bus' -> ?", options: ["buss", "buses", "busies"], correct: 1 },
+            { question: "Rendhagyó többes szám (férfi):", options: ["mans", "man", "men"], correct: 2 },
+            { question: "Többes szám: 'box' -> ?", options: ["boxs", "boxies", "boxes"], correct: 2 },
+            { question: "Hogyan mondod: 'Nők'?", options: ["womans", "womens", "women"], correct: 2 }
         ]
     },
     {
@@ -120,7 +140,11 @@ export const GRAMMAR_LESSONS = [
         ],
         quiz: [
             { question: "Hogy mondod: 'Most olvasok'?", options: ["I reading now.", "I am reading now.", "I read now."], correct: 1 },
-            { question: "Mikor használjuk?", options: ["Éppen most történő cselekvéseknél", "Általános igazságoknál"], correct: 0 }
+            { question: "Mikor használjuk?", options: ["Éppen most történő cselekvéseknél", "Általános igazságoknál"], correct: 0 },
+            { question: "Tagadás: 'Ő éppen nem alszik'?", options: ["He not sleeping.", "He is not sleeping.", "He does not sleeping."], correct: 1 },
+            { question: "Kérdés: 'Te éppen főzöl?'", options: ["Are you cooking?", "Do you cooking?", "You are cooking?"], correct: 0 },
+            { question: "Mi a helyes alak (fuss)?", options: ["runing", "running", "runing"], correct: 1 },
+            { question: "Válassz: 'Look! The baby ____.'", options: ["smile", "smiles", "is smiling"], correct: 2 }
         ]
     },
     {
@@ -138,7 +162,11 @@ export const GRAMMAR_LESSONS = [
         ],
         quiz: [
             { question: "Hogy kérdezed: 'Dolgoztál tegnap?'", options: ["Do you worked yesterday?", "Did you work yesterday?", "Are you work yesterday?"], correct: 1 },
-            { question: "Melyik a helyes forma múlt időben (regular)?", options: ["stay -> staied", "play -> plaied", "work -> worked"], correct: 2 }
+            { question: "Melyik a helyes forma múlt időben (regular)?", options: ["stay -> staied", "play -> plaied", "work -> worked"], correct: 2 },
+            { question: "Helyes tagadás múlt időben:", options: ["I didn't went.", "I didn't go.", "I don't went."], correct: 1 },
+            { question: "Szabályos ige végződése:", options: ["-ing", "-s", "-ed"], correct: 2 },
+            { question: "Helyes-e: 'I watched a movie'?", options: ["Igen", "Nem, 'I watch' kell.", "Nem, 'I was watched' kell."], correct: 0 },
+            { question: "Válaszolj: 'Did you see Peter?'", options: ["Yes, I did.", "Yes, I see.", "Yes, I do."], correct: 0 }
         ]
     },
     {
@@ -157,7 +185,11 @@ export const GRAMMAR_LESSONS = [
         ],
         quiz: [
             { question: "Melyik a helyes?", options: ["She can sings.", "She can sing.", "She can to sing."], correct: 1 },
-            { question: "Melyik segédige fejez ki képességet?", options: ["will", "can", "must"], correct: 1 }
+            { question: "Melyik segédige fejez ki képességet?", options: ["will", "can", "must"], correct: 1 },
+            { question: "Melyik a kakukktojás (mi NEM fejez ki képességet)?", options: ["I can swim.", "I can jump.", "I can go there tomorrow (ígéret)."], correct: 2 },
+            { question: "Tagadás: 'Nem tudok úszni.'", options: ["I can not swim.", "I can't swim.", "Mindkettő helyes."], correct: 2 },
+            { question: "Kérdés: 'Tudsz repülni?'", options: ["Can you fly?", "Do you can fly?", "Are you can fly?"], correct: 0 },
+            { question: "Válassz: 'He ____ speak English very well.'", options: ["cans", "can", "is can"], correct: 1 }
         ]
     },
     {
@@ -176,7 +208,11 @@ export const GRAMMAR_LESSONS = [
         ],
         quiz: [
             { question: "Hogy mondod: 'Segíteni fogok neked'?", options: ["I will helping you.", "I helps you.", "I will help you."], correct: 2 },
-            { question: "Mi a 'will not' rövidítése?", options: ["willn't", "won't", "don't"], correct: 1 }
+            { question: "Mi a 'will not' rövidítése?", options: ["willn't", "won't", "don't"], correct: 1 },
+            { question: "Melyik fejez ki jövő időt?", options: ["I go.", "I went.", "I will go."], correct: 2 },
+            { question: "Kérdés: 'Eljössz?'", options: ["Will you come?", "Do you will come?", "Are you will come?"], correct: 0 },
+            { question: "Helyes-e: 'I will to call you'?", options: ["Igen", "Nem, a 'to' nem kell.", "Igen, de csak E/3-ban."], correct: 1 },
+            { question: "Ígéret: 'Nem foglak elfelejteni.'", options: ["I won't forget you.", "I will not forget you.", "Mindkettő helyes."], correct: 2 }
         ]
     },
     {
@@ -195,7 +231,11 @@ export const GRAMMAR_LESSONS = [
         ],
         quiz: [
             { question: "Mi a 'good' középfoka?", options: ["gooder", "more good", "better"], correct: 2 },
-            { question: "Melyik a helyes?", options: ["more cheaper", "cheaper", "most cheap"], correct: 1 }
+            { question: "Melyik a helyes?", options: ["more cheaper", "cheaper", "most cheap"], correct: 1 },
+            { question: "Hosszú melléknév fokozása (beautiful):", options: ["beautifuller", "more beautiful", "beautifullest"], correct: 1 },
+            { question: "Mi hiányzik? 'She is taller ____ me.'", options: ["than", "then", "that"], correct: 0 },
+            { question: "Rendhagyó fokozás (bad):", options: ["badder", "worse", "worst"], correct: 1 },
+            { question: "Melyik a helyes középfok: 'Happy'?", options: ["happyer", "happier", "more happy"], correct: 1 }
         ]
     },
     {
@@ -212,7 +252,11 @@ export const GRAMMAR_LESSONS = [
         ],
         quiz: [
             { question: "Enyém vagy tiéd?", options: ["Mine or yours?", "My or your?", "Me or you?"], correct: 0 },
-            { question: "Ez a könyv az övé (lány).", options: ["This book is her.", "This book is hers.", "This book is she."], correct: 1 }
+            { question: "Ez a könyv az övé (lány).", options: ["This book is her.", "This book is hers.", "This book is she."], correct: 1 },
+            { question: "Válaszolj: 'Whose is this?' (A miénk)", options: ["It's our.", "It's ours.", "It's us."], correct: 1 },
+            { question: "Melyik a kakukktojás?", options: ["mine", "house", "theirs"], correct: 1 },
+            { question: "Helyes-e: 'The car is your'?", options: ["Igen", "Nem, 'yours' kell.", "Nem, 'your's' kell (aposztróffal)."], correct: 1 },
+            { question: "Fordítsd: 'Az övék.'", options: ["They.", "Theirs.", "Them."], correct: 1 }
         ]
     },
     {
@@ -231,7 +275,11 @@ export const GRAMMAR_LESSONS = [
         ],
         quiz: [
             { question: "Hétfőn", options: ["in Monday", "on Monday", "at Monday"], correct: 1 },
-            { question: "Az asztalon", options: ["in the table", "on the table", "at the table"], correct: 1 }
+            { question: "Az asztalon", options: ["in the table", "on the table", "at the table"], correct: 1 },
+            { question: "Reggel", options: ["in the morning", "on the morning", "at the morning"], correct: 0 },
+            { question: "5 órakor", options: ["in 5 o'clock", "on 5 o'clock", "at 5 o'clock"], correct: 2 },
+            { question: "Budapesten", options: ["in Budapest", "on Budapest", "at Budapest"], correct: 0 },
+            { question: "A busz megállóban (pontnál)", options: ["in the bus stop", "on the bus stop", "at the bus stop"], correct: 2 }
         ]
     },
     {
@@ -250,7 +298,11 @@ export const GRAMMAR_LESSONS = [
         ],
         quiz: [
             { question: "Mit jelent: 'You mustn't do that'?", options: ["Nem kell megtenned.", "Tilos megtenned.", "Nem tudod megtenni."], correct: 1 },
-            { question: "Hogy írjuk, hogy mennem kell?", options: ["I must go.", "I must going.", "I must to go."], correct: 0 }
+            { question: "Hogy írjuk, hogy mennem kell?", options: ["I must go.", "I must going.", "I must to go."], correct: 0 },
+            { question: "Melyik fejez ki szabályt vagy erős kötelességet?", options: ["can", "will", "must"], correct: 2 },
+            { question: "Helyes-e: 'You mustn't to smoke here'?", options: ["Igen", "Nem, a 'to' nem kell.", "Igen, de csak kérdésben."], correct: 1 },
+            { question: "Tagadás (tilos):", options: ["must not", "not must", "don't must"], correct: 0 },
+            { question: "Válassz: 'We ____ be quiet in the library.'", options: ["musts", "must", "are must"], correct: 1 }
         ]
     },
     {
@@ -267,7 +319,11 @@ export const GRAMMAR_LESSONS = [
         ],
         quiz: [
             { question: "Segíts neki! (fiú)", options: ["Help he!", "Help his!", "Help him!"], correct: 2 },
-            { question: "Szeretem őket.", options: ["I love their.", "I love them.", "I love they."], correct: 1 }
+            { question: "Szeretem őket.", options: ["I love their.", "I love them.", "I love they."], correct: 1 },
+            { question: "Mondd meg nekünk az igazat.", options: ["Tell we the truth.", "Tell us the truth.", "Tell ours the truth."], correct: 1 },
+            { question: "Látlak titeket/téged.", options: ["I see you.", "I see yours.", "I see your."], correct: 0 },
+            { question: "Várd meg őt! (lány)", options: ["Wait for she!", "Wait for her!", "Wait for hers!"], correct: 1 },
+            { question: "Melyik a kakukktojás (nem tárgyeset)?", options: ["me", "them", "their"], correct: 2 }
         ]
     },
     {
@@ -290,7 +346,12 @@ export const GRAMMAR_LESSONS = [
         quiz: [
             { question: "Melyik jelöl folyamatos, éppen történő cselekvést?", options: ["I play tennis.", "I am playing tennis.", "I played tennis."], correct: 1 },
             { question: "Mit válassz erre: 'I ____ to the cinema yesterday'?", options: ["go", "will go", "went"], correct: 2 },
-            { question: "Melyik jelentést hordozza a 'will'?", options: ["Múltbeli befejezett", "Jövőbeli szándék/ígéret", "Általános igazság"], correct: 1 }
+            { question: "Melyik jelentést hordozza a 'will'?", options: ["Múltbeli befejezett", "Jövőbeli szándék/ígéret", "Általános igazság"], correct: 1 },
+            { question: "Melyik a helyes E/3 alak?", options: ["She work every day.", "She works every day.", "She is work every day."], correct: 1 },
+            { question: "Tagadás múltban:", options: ["I don't go.", "I didn't go.", "I no go."], correct: 1 },
+            { question: "Kérdés feltevése most történő cselekvésnél:", options: ["Are you sleeping?", "Do you sleeping?", "Did you sleep?"], correct: 0 },
+            { question: "Jövő idejű tagadás:", options: ["I willn't", "I won't", "I don't will"], correct: 1 },
+            { question: "Melyik a kakukktojás (nem igeidő)?", options: ["Simple Present", "Past Simple", "Good Job"], correct: 2 }
         ]
     }
 ];
