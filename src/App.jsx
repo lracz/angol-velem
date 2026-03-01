@@ -646,9 +646,10 @@ Ne írj semmi mást a JSON-ön kívül!`;
     );
   }
 
+  const dailyCount = userData?.dailyProgress?.count || 0;
   const DAILY_GOAL = 50 + ((userData?.level || 1) - 1) * 5;
-  const progressPct = Math.min((userData?.dailyProgress?.count || 0) / DAILY_GOAL * 100, 100);
-  const isOverGoal = (userData?.dailyProgress?.count || 0) >= DAILY_GOAL;
+  const progressPct = Math.min(dailyCount / DAILY_GOAL * 100, 100);
+  const isOverGoal = dailyCount >= DAILY_GOAL;
 
   const tabs = [
     { id: 'dictionary', label: 'Szótár', icon: Book },
@@ -752,6 +753,7 @@ Ne írj semmi mást a JSON-ön kívül!`;
               items={combinedPhrases}
               categories={PHRASE_CATEGORIES}
               onFetchMore={handleFetchMoreWords}
+              onProgress={handleProgress}
               onMarkKnown={(id, data) => handleMarkKnown(id, data)}
               playSound={sound.playDing}
               onQuestProgress={handleQuestProgress}
