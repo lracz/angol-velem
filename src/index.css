@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@theme {
+  --font-nunito: 'Nunito', sans-serif;
+}
+
+* {
+  font-family: 'Nunito', sans-serif;
+}
+
+/* ── Card flip ─────────────────────────────────────── */
+.perspective { perspective: 600px; }
+.flip-inner {
+  transition: transform 0.6s cubic-bezier(.4,.2,.2,1);
+  transform-style: preserve-3d;
+}
+.flip-inner.flipped { transform: rotateY(180deg); }
+.flip-front, .flip-back { backface-visibility: hidden; }
+.flip-back { transform: rotateY(180deg); }
+
+/* ── Bounce animation ──────────────────────────────── */
+@keyframes bounceIn {
+  0%   { transform: scale(0.3); opacity: 0; }
+  50%  { transform: scale(1.08); }
+  70%  { transform: scale(0.95); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-bounce-in { animation: bounceIn 0.5s ease-out; }
+
+/* ── Confetti particles ────────────────────────────── */
+@keyframes confettiFall {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(120px) rotate(720deg); opacity: 0; }
+}
+.confetti-piece {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  animation: confettiFall 1s ease-out forwards;
+}
+
+/* ── Pulse glow for mic ────────────────────────────── */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+  50%      { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+}
+.animate-pulse-glow { animation: pulseGlow 1.2s infinite; }
+
+/* ── Slide up for chat messages ──────────────────── */
+@keyframes slideUp {
+  0%   { transform: translateY(12px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.animate-slide-up { animation: slideUp 0.3s ease-out; }
+
+/* ── Progress bar shimmer ────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer-bar {
+  background: linear-gradient(90deg, #f9a8d4, #c084fc, #f9a8d4);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* ── Smooth scrollbar ────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #e9d5ff; border-radius: 999px; }
