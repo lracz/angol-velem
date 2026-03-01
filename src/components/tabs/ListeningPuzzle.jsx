@@ -51,6 +51,7 @@ export function ListeningPuzzle({ phrases, sound, onQuestProgress, savedSolved =
                 sound.playDing();
                 setShowConfetti(true);
                 if (onQuestProgress) onQuestProgress('listening');
+                if (onSolvePhrase) onSolvePhrase(currentPhrase.id);
                 setTimeout(() => setShowConfetti(false), 2000);
             } else {
                 setTimeout(() => {
@@ -151,7 +152,7 @@ export function ListeningPuzzle({ phrases, sound, onQuestProgress, savedSolved =
                     </div>
                     <button
                         onClick={() => {
-                            if (onSolvePhrase) onSolvePhrase(currentPhrase.id);
+                            initPuzzle();
                         }}
                         className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-bold shadow-xl hover:scale-105 active:scale-95 transition-all"
                     >

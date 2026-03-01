@@ -125,8 +125,12 @@ export default function App() {
   }, [userData.generatedCards]);
 
   const dynamicPuzzlePhrases = useMemo(() => {
-    const knownVocab = combinedVocabulary.filter(v => userData?.vocabMap?.[v.id] === 'known' || userData?.vocabMap?.[v.id] === 'review');
-    return generateDynamicSentences(knownVocab, 20);
+    const learningOrKnown = combinedVocabulary.filter(v =>
+      userData?.vocabMap?.[v.id] === 'known' ||
+      userData?.vocabMap?.[v.id] === 'review' ||
+      userData?.vocabMap?.[v.id] === 'learning'
+    );
+    return generateDynamicSentences(learningOrKnown, 20);
   }, [combinedVocabulary, userData.vocabMap]);
 
   // ── 1. Auth Listener ──────────────────────────────────────────
@@ -315,7 +319,14 @@ export default function App() {
         }, 5000);
       }
     } else {
-      updateFirebase({ completedLessons: newList });
+      // Award minor rewards for finishing a lesson even if already done
+      const newXp = (userData.xp || 0) + 20;
+      const newCoins = (userData.snailCoins || 0) + 5;
+      updateFirebase({
+        completedLessons: newList,
+        xp: newXp,
+        snailCoins: newCoins
+      });
     }
   };
 
@@ -367,8 +378,7 @@ export default function App() {
         didLevelUp = true;
       }
 
-      const freshUserData = {
-        ...userData,
+      const updates = {
         quests: updatedQuests,
         xp: newXp,
         level: newLevel,
@@ -376,8 +386,9 @@ export default function App() {
         snailFood: newFood,
         snailWater: newWater
       };
-      setUserData(freshUserData);
-      await setDoc(doc(db, 'users', user.uid), freshUserData, { merge: true });
+
+      setUserData(prev => ({ ...prev, ...updates }));
+      await updateFirebase(updates);
 
       if (didLevelUp) {
         sound.playDing();
@@ -438,10 +449,40 @@ export default function App() {
 
     const key = type === 'practice' ? 'practiceSolved' : 'listeningSolved';
     const currentList = userData[key] || [];
-    if (!currentList.includes(phraseId)) {
-      updateFirebase({
-        [key]: [...currentList, phraseId]
-      });
+
+    // Always award XP for solving a puzzle
+    const xpReward = 10;
+    const coinReward = 2;
+    const newXp = (userData.xp || 0) + xpReward;
+    const newCoins = (userData.snailCoins || 0) + coinReward;
+
+    let newLevel = userData.level || 1;
+    let didLevelUp = false;
+    while (newXp >= newLevel * newLevel * 100) {
+      newLevel++;
+      didLevelUp = true;
+    }
+
+    const updates = {
+      xp: newXp,
+      level: newLevel,
+      snailCoins: newCoins
+    };
+
+    if (phraseId !== true && !currentList.includes(phraseId)) {
+      updates[key] = [...currentList, phraseId];
+    }
+
+    updateFirebase(updates);
+
+    if (didLevelUp) {
+      sound.playDing();
+      setLevelUpMessage(`Szintlépés! Elérted a(z) ${newLevel}. szintet! 🎉`);
+      setShowGlobalConfetti(true);
+      setTimeout(() => {
+        setShowGlobalConfetti(false);
+        setLevelUpMessage(null);
+      }, 5000);
     }
   };
 
