@@ -17,12 +17,15 @@ export function ListeningPuzzle({ phrases, sound, onQuestProgress, savedSolved =
     const [showConfetti, setShowConfetti] = useState(false);
 
     const initPuzzle = useCallback(() => {
-        if (solvedContent.length >= phrases.length && phrases.length > 0) {
+        if (!phrases || phrases.length === 0) return;
+
+        const unsolved = phrases.filter(p => !solvedContent.includes(p.id));
+
+        if (unsolved.length === 0) {
             setCurrentPhrase(null);
             return;
         }
 
-        const unsolved = phrases.filter(p => !solvedContent.includes(p.id));
         const randomPhrase = unsolved[Math.floor(Math.random() * unsolved.length)];
         if (!randomPhrase) return;
 

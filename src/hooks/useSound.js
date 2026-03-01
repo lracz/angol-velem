@@ -57,12 +57,37 @@ export function useSound() {
 // TEXT-TO-SPEECH HELPER
 // ═══════════════════════════════════════════════════════════════════
 
+let preferredVoice = null;
+
+const loadVoices = () => {
+    if (!window.speechSynthesis) return;
+    const voices = window.speechSynthesis.getVoices();
+    // Prioritize natural/google voices
+    preferredVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Premium')))
+        || voices.find(v => v.lang.startsWith('en-US'))
+        || voices.find(v => v.lang.startsWith('en'));
+};
+
+if (window.speechSynthesis) {
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+    loadVoices();
+}
+
 export const speak = (text, rate = 1) => {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
+
     const u = new SpeechSynthesisUtterance(text);
+    if (!preferredVoice) loadVoices();
+
+    if (preferredVoice) {
+        u.voice = preferredVoice;
+    }
+
     u.lang = 'en-US';
     u.rate = rate;
-    u.pitch = 1.1;
+    u.pitch = 1.0; // Slightly more natural pitch
     window.speechSynthesis.speak(u);
 };

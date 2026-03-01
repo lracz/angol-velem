@@ -179,7 +179,7 @@ export default function App() {
         let dbStreak = data.streak || 0;
 
         if (dbDaily.date !== today) {
-          const reqXp = 50 + ((data.level || 1) * 5);
+          const reqXp = 50 + ((data.level || 1) - 1) * 5;
           if (dbDaily.count >= reqXp) dbStreak += 1;
           else if (dbDaily.count === 0) dbStreak = 0;
           dbDaily = { date: today, count: 0 };
@@ -226,9 +226,10 @@ export default function App() {
           snailWaterLevel: data.snailWaterLevel ?? 100,
           ownedAccessories: data.ownedAccessories || [],
           equippedAccessories: data.equippedAccessories || [],
+          practiceSolved: data.practiceSolved || [],
+          listeningSolved: data.listeningSolved || [],
         });
       } else {
-        const initialQuests = generateDailyQuests();
         const initialData = {
           vocabMap: {},
           generatedCards: [],
@@ -249,6 +250,8 @@ export default function App() {
           snailWaterLevel: 100,
           ownedAccessories: [],
           equippedAccessories: [],
+          practiceSolved: [],
+          listeningSolved: [],
         };
         setDoc(docRef, initialData);
         setUserData(initialData);
@@ -256,7 +259,7 @@ export default function App() {
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, db]);
 
   // ── Firestore Write Helpers ───────────────────────────────────
   const updateFirebase = async (updates) => {
@@ -643,9 +646,9 @@ Ne írj semmi mást a JSON-ön kívül!`;
     );
   }
 
-  const dailyCount = userData?.dailyProgress?.count || 0;
-  const progressPct = Math.min((dailyCount / DAILY_GOAL) * 100, 100);
-  const isOverGoal = dailyCount >= DAILY_GOAL;
+  const DAILY_GOAL = 50 + ((userData?.level || 1) - 1) * 5;
+  const progressPct = Math.min((userData?.dailyProgress?.count || 0) / DAILY_GOAL * 100, 100);
+  const isOverGoal = (userData?.dailyProgress?.count || 0) >= DAILY_GOAL;
 
   const tabs = [
     { id: 'dictionary', label: 'Szótár', icon: Book },
@@ -748,8 +751,7 @@ Ne írj semmi mást a JSON-ön kívül!`;
             <FlashcardTab
               items={combinedPhrases}
               categories={PHRASE_CATEGORIES}
-              vocabMap={userData.vocabMap}
-              onProgress={handleProgress}
+              onFetchMore={handleFetchMoreWords}
               onMarkKnown={(id, data) => handleMarkKnown(id, data)}
               playSound={sound.playDing}
               onQuestProgress={handleQuestProgress}
