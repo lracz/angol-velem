@@ -22,7 +22,11 @@ export function SnailPet({
 
     // Calculate generic happiness/health based on food & water
     const healthTarget = (foodLevel + waterLevel) / 2;
-    const emotion = healthTarget > 75 ? '😎' : healthTarget > 40 ? '🐌' : '🥺';
+    // Emotions: 😎 (Happy), 🐌 (Neutral), 🥺 (Sad/Hungry), 🤒 (Sick), 😠 (Angry/Neglected)
+    const emotion = healthTarget > 80 ? '😎' :
+        healthTarget > 50 ? '🐌' :
+            healthTarget > 25 ? '🥺' :
+                healthTarget > 10 ? '🤒' : '😠';
 
     // Handle Feeding
     const handleFeed = (e) => {
@@ -138,6 +142,13 @@ export function SnailPet({
                 </div>
 
                 {/* Actions */}
+                <div className="w-full text-center mb-2">
+                    {healthTarget < 25 && (
+                        <p className="text-[10px] font-bold text-red-500 animate-pulse uppercase">
+                            {healthTarget < 10 ? 'Dühös és elhanyagolt!' : 'Beteg és éhes!'}
+                        </p>
+                    )}
+                </div>
                 <div className="grid grid-cols-2 gap-2 w-full mb-4">
                     <button
                         onClick={handleFeed}

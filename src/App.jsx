@@ -184,6 +184,7 @@ export default function App() {
           dbDaily = { date: today, count: 0 };
 
           const newQuests = generateDailyQuests();
+          // Decrease snail levels by 25% each day
           const newFoodLevel = Math.max(0, (data.snailFoodLevel ?? 100) - 25);
           const newWaterLevel = Math.max(0, (data.snailWaterLevel ?? 100) - 25);
 
@@ -240,9 +241,9 @@ export default function App() {
           listeningIndex: 0,
           redeemedCoupons: [],
           unlockedSecrets: [],
-          snailCoins: 0,
-          snailFood: 5,
-          snailWater: 5,
+          snailCoins: 10,
+          snailFood: 2,
+          snailWater: 2,
           snailFoodLevel: 100,
           snailWaterLevel: 100,
           ownedAccessories: [],
@@ -272,6 +273,18 @@ export default function App() {
       const updates = {
         vocabMap: { ...userData.vocabMap, [id]: newStatus }
       };
+
+      // 100% rewards for the first time marking as known
+      if (newStatus?.status === 'known' && userData?.vocabMap?.[id] !== 'known') {
+        updates.xp = (userData.xp || 0) + 5;
+        updates.snailCoins = (userData.snailCoins || 0) + 1;
+
+        let newLevel = userData.level || 1;
+        while (updates.xp >= newLevel * newLevel * 100) {
+          newLevel++;
+        }
+        updates.level = newLevel;
+      }
 
       // 30% chance to find food or water when practicing
       if (Math.random() > 0.7) {
