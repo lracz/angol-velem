@@ -14,6 +14,9 @@ export function AiChatTab({ onNewFlashcard, onQuestProgress }) {
         scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
+    const primaryKey = import.meta.env.VITE_GEMINI_API_KEY;
+    const secondaryKey = import.meta.env.VITE_GEMINI_API_KEY_SECONDARY;
+
     async function callGemini(systemPrompt, msgs) {
         // Diagnostic Logging Utility
         const redact = (k) => k ? `${k.substring(0, 6)}...${k.substring(k.length - 4)}` : "MISSING";
