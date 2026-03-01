@@ -15,11 +15,18 @@ export function AdminPanel({ onClose }) {
         message: 'Új kihívás a Párodtól!'
     });
 
+    const [weeklyGoal, setWeeklyGoal] = useState({
+        targetXp: 2000,
+        reward: 'Péntek esti vacsora 🍕',
+        active: true
+    });
+
     const ADMIN_PASSWORD = 'kiscica'; // simple default password
 
     useEffect(() => {
         if (isAuthenticated) {
             loadChallenge();
+            loadWeeklyGoal();
         }
     }, [isAuthenticated]);
 
@@ -35,6 +42,18 @@ export function AdminPanel({ onClose }) {
         }
     };
 
+    const loadWeeklyGoal = async () => {
+        try {
+            const docRef = doc(db, 'global', 'weeklyGoal');
+            const snap = await getDoc(docRef);
+            if (snap.exists()) {
+                setWeeklyGoal(snap.data());
+            }
+        } catch (err) {
+            console.error("Failed to load weekly goal", err);
+        }
+    };
+
     const saveChallenge = async (activeStatus = true) => {
         try {
             const docRef = doc(db, 'global', 'challenges');
@@ -42,6 +61,16 @@ export function AdminPanel({ onClose }) {
             await setDoc(docRef, dataToSave);
             setChallengeData(dataToSave);
             alert('Kihívás sikeresen mentve!');
+        } catch (err) {
+            alert('Hiba a mentés során: ' + err.message);
+        }
+    };
+
+    const saveWeeklyGoal = async () => {
+        try {
+            const docRef = doc(db, 'global', 'weeklyGoal');
+            await setDoc(docRef, weeklyGoal);
+            alert('Heti cél sikeresen mentve!');
         } catch (err) {
             alert('Hiba a mentés során: ' + err.message);
         }
@@ -98,71 +127,106 @@ export function AdminPanel({ onClose }) {
                 </div>
 
                 <div className="space-y-4">
-                    <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Üdvözlő Szöveg / Motiváció</label>
-                        <input
-                            type="text"
-                            value={challengeData.message}
-                            onChange={e => setChallengeData({ ...challengeData, message: e.target.value })}
-                            className="w-full px-4 py-3 bg-gray-100 rounded-xl"
-                        />
+                    <div className="space-y-4">
+                        <h3 className="font-bold text-gray-800 flex items-center gap-2">⚔️ Napi Boss Fight</h3>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Üdvözlő Szöveg / Motiváció</label>
+                            <input
+                                type="text"
+                                value={challengeData.message}
+                                onChange={e => setChallengeData({ ...challengeData, message: e.target.value })}
+                                className="w-full px-4 py-3 bg-gray-100 rounded-xl"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Magyar Mondat (A feladvány)</label>
+                            <input
+                                type="text"
+                                value={challengeData.hungarian}
+                                onChange={e => setChallengeData({ ...challengeData, hungarian: e.target.value })}
+                                className="w-full px-4 py-3 bg-gray-100 rounded-xl"
+                                placeholder="pl. Szeretlek, de mosogass el!"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Angol Megoldás (Szavakra bontva lesz)</label>
+                            <input
+                                type="text"
+                                value={challengeData.english}
+                                onChange={e => setChallengeData({ ...challengeData, english: e.target.value })}
+                                className="w-full px-4 py-3 bg-gray-100 rounded-xl"
+                                placeholder="pl. I love you but wash the dishes!"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">XP Jutalom</label>
+                            <input
+                                type="number"
+                                value={challengeData.xpReward}
+                                onChange={e => setChallengeData({ ...challengeData, xpReward: parseInt(e.target.value) })}
+                                className="w-full px-4 py-3 bg-gray-100 rounded-xl"
+                            />
+                        </div>
+
+                        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-600 rounded-xl border border-red-100 mt-4">
+                            <input
+                                type="checkbox"
+                                id="activeCheck"
+                                checked={challengeData.active}
+                                onChange={e => setChallengeData({ ...challengeData, active: e.target.checked })}
+                                className="w-5 h-5 accent-red-600"
+                            />
+                            <label htmlFor="activeCheck" className="font-bold cursor-pointer">Kihívás Aktiválása!</label>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={deleteChallenge}
+                                className="p-3 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-xl font-bold flex items-center justify-center transition-colors"
+                            >
+                                <Trash2 size={20} />
+                            </button>
+                            <button
+                                onClick={() => saveChallenge(challengeData.active)}
+                                className="flex-1 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-xl font-black shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+                            >
+                                <Save size={20} /> Mentés és Küldés
+                            </button>
+                        </div>
                     </div>
 
-                    <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Magyar Mondat (A feladvány)</label>
-                        <input
-                            type="text"
-                            value={challengeData.hungarian}
-                            onChange={e => setChallengeData({ ...challengeData, hungarian: e.target.value })}
-                            className="w-full px-4 py-3 bg-gray-100 rounded-xl"
-                            placeholder="pl. Szeretlek, de mosogass el!"
-                        />
-                    </div>
+                    <div className="border-t pt-6 mt-6 space-y-4">
+                        <h3 className="font-bold text-gray-800 flex items-center gap-2">🤝 Heti Közös Cél</h3>
 
-                    <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Angol Megoldás (Szavakra bontva lesz)</label>
-                        <input
-                            type="text"
-                            value={challengeData.english}
-                            onChange={e => setChallengeData({ ...challengeData, english: e.target.value })}
-                            className="w-full px-4 py-3 bg-gray-100 rounded-xl"
-                            placeholder="pl. I love you but wash the dishes!"
-                        />
-                    </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Cél XP (Heti)</label>
+                            <input
+                                type="number"
+                                value={weeklyGoal.targetXp}
+                                onChange={e => setWeeklyGoal({ ...weeklyGoal, targetXp: parseInt(e.target.value) })}
+                                className="w-full px-4 py-3 bg-gray-100 rounded-xl"
+                            />
+                        </div>
 
-                    <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">XP Jutalom</label>
-                        <input
-                            type="number"
-                            value={challengeData.xpReward}
-                            onChange={e => setChallengeData({ ...challengeData, xpReward: parseInt(e.target.value) })}
-                            className="w-full px-4 py-3 bg-gray-100 rounded-xl"
-                        />
-                    </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Jutalom leírása</label>
+                            <input
+                                type="text"
+                                value={weeklyGoal.reward}
+                                onChange={e => setWeeklyGoal({ ...weeklyGoal, reward: e.target.value })}
+                                className="w-full px-4 py-3 bg-gray-100 rounded-xl"
+                                placeholder="pl. Egy közös mozi 🍿"
+                            />
+                        </div>
 
-                    <div className="flex items-center gap-2 p-4 bg-red-50 text-red-600 rounded-xl border border-red-100 mt-4">
-                        <input
-                            type="checkbox"
-                            id="activeCheck"
-                            checked={challengeData.active}
-                            onChange={e => setChallengeData({ ...challengeData, active: e.target.checked })}
-                            className="w-5 h-5 accent-red-600"
-                        />
-                        <label htmlFor="activeCheck" className="font-bold cursor-pointer">Kihívás Aktiválása!</label>
-                    </div>
-
-                    <div className="flex gap-3 pt-4 border-t mt-4">
                         <button
-                            onClick={deleteChallenge}
-                            className="p-3 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-xl font-bold flex items-center justify-center transition-colors"
+                            onClick={saveWeeklyGoal}
+                            className="w-full py-3 bg-purple-600 text-white rounded-xl font-black shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
                         >
-                            <Trash2 size={20} />
-                        </button>
-                        <button
-                            onClick={() => saveChallenge(challengeData.active)}
-                            className="flex-1 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-xl font-black shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
-                        >
-                            <Save size={20} /> Mentés és Küldés
+                            <Save size={20} /> Heti Cél Mentése
                         </button>
                     </div>
                 </div>

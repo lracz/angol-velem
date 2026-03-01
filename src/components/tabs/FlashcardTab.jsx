@@ -39,7 +39,7 @@ export function FlashcardTab({
     const allCards = useMemo(() => {
         const combined = [...items, ...generatedCards];
         return combined.map(c => {
-            const vData = vocabMap[c.id];
+            const vData = vocabMap ? vocabMap[c.id] : null;
             const status = typeof vData === 'string' ? vData : (vData?.status || 'learning');
             const nextReview = vData?.nextReview || 0;
             const interval = vData?.interval || 1;

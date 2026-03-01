@@ -65,7 +65,11 @@ export function SnailPet({
                 </span>
                 <div className="relative w-12 h-12 flex items-center justify-center">
                     <span className={`text-3xl filter drop-shadow hover:scale-110 transition-transform ${isEating ? 'animate-bounce' : ''}`}>
-                        {emotion}
+                        🐌
+                    </span>
+                    {/* Emotion layer */}
+                    <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-xl ml-[-12px] mt-[-2px] pointer-events-none">
+                        {emotion === '😎' ? '🕶️' : emotion === '🥺' ? '🥺' : emotion === '🤒' ? '🤒' : emotion === '😠' ? '😠' : ''}
                     </span>
                     {/* Render equipped accessories mini */}
                     {equipped.map(accId => {
@@ -104,15 +108,18 @@ export function SnailPet({
                 {/* Avatar */}
                 <div className="relative w-24 h-24 flex items-center justify-center bg-gradient-to-br from-pink-50 to-blue-50 rounded-full mb-4 shadow-inner border border-gray-100">
                     <span className={`text-5xl filter drop-shadow-lg scale-x-[-1] transition-transform ${isEating ? 'animate-bounce' : ''}`}>
-                        {emotion}
+                        🐌
+                    </span>
+                    {/* Emotion layer */}
+                    <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl mr-[-24px] mt-[-4px] pointer-events-none scale-x-[-1]">
+                        {emotion === '😎' ? '🕶️' : emotion === '🥺' ? '🥺' : emotion === '🤒' ? '🤒' : emotion === '😠' ? '😠' : ''}
                     </span>
                     {equipped.map(accId => {
                         const acc = ACCESSORIES.find(a => a.id === accId);
                         if (!acc) return null;
                         let pos = acc.position;
-                        // Avatar is mirrored here (scale-x-[-1]), we might need to adjust positions but we accept the simple approach.
                         return (
-                            <span key={acc.id} className={`absolute ${pos} scale-125 pointer-events-none filter drop-shadow-md`}>
+                            <span key={acc.id} className={`absolute ${pos} scale-150 pointer-events-none filter drop-shadow-md`}>
                                 {acc.emoji}
                             </span>
                         );

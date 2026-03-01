@@ -7,7 +7,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Heart, BookOpen, Languages, Gamepad2, Headphones,
   GraduationCap, TrendingUp, Sparkles, LogOut,
-  Star, Flame, Target, Medal, Book
+  Star, Flame, Target, Medal, Book, Mic
 } from 'lucide-react';
 
 // Config & Firebase
@@ -43,6 +43,7 @@ import { ListeningPuzzle } from './components/tabs/ListeningPuzzle';
 import { AiChatTab } from './components/tabs/AiChatTab';
 import { DictionaryTab } from './components/tabs/DictionaryTab';
 import { ProgressionTab } from './components/tabs/ProgressionTab';
+import { PronunciationTab } from './components/tabs/PronunciationTab';
 import { SecretModal } from './components/ui/SecretModal';
 import { SnailPet } from './components/ui/SnailPet';
 import { SnailShopModal } from './components/ui/SnailShopModal';
@@ -54,6 +55,15 @@ import { SECRETS } from './data/secrets';
 // ═══════════════════════════════════════════════════════════════════
 // MAIN APP (Handles Auth & Firebase Sync)
 // ═══════════════════════════════════════════════════════════════════
+const getWeekId = () => {
+  const d = new Date();
+  const day = d.getDay();
+  // Monday is start of week
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(d.setDate(diff));
+  return monday.toDateString();
+};
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [authChecking, setAuthChecking] = useState(true);
@@ -76,6 +86,8 @@ export default function App() {
     snailWaterLevel: 100,
     ownedAccessories: [],
     equippedAccessories: [],
+    weeklyXp: 0,
+    weeklyResetDate: getWeekId(),
   });
 
   const [showGlobalConfetti, setShowGlobalConfetti] = useState(false);
@@ -86,6 +98,7 @@ export default function App() {
   const [activeSecret, setActiveSecret] = useState(null);
   const [showSnailShop, setShowSnailShop] = useState(false);
   const [activeChallenge, setActiveChallenge] = useState(null);
+  const [globalWeeklyGoal, setGlobalWeeklyGoal] = useState(null);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [headerClicks, setHeaderClicks] = useState(0);
   const sound = useSound();
@@ -206,6 +219,19 @@ export default function App() {
           data.listeningSolved = [];
         }
 
+        const weekId = getWeekId();
+        let dbWeeklyXp = data.weeklyXp || 0;
+        let dbWeeklyResetDate = data.weeklyResetDate || weekId;
+
+        if (dbWeeklyResetDate !== weekId) {
+          dbWeeklyXp = 0;
+          dbWeeklyResetDate = weekId;
+          setDoc(docRef, {
+            weeklyXp: 0,
+            weeklyResetDate: weekId
+          }, { merge: true });
+        }
+
         setUserData({
           vocabMap: data.vocabMap || {},
           generatedCards: data.generatedCards || [],
@@ -228,6 +254,8 @@ export default function App() {
           equippedAccessories: data.equippedAccessories || [],
           practiceSolved: data.practiceSolved || [],
           listeningSolved: data.listeningSolved || [],
+          weeklyXp: dbWeeklyXp,
+          weeklyResetDate: dbWeeklyResetDate,
         });
       } else {
         const initialData = {
@@ -252,13 +280,23 @@ export default function App() {
           equippedAccessories: [],
           practiceSolved: [],
           listeningSolved: [],
+          weeklyXp: 0,
+          weeklyResetDate: getWeekId(),
         };
         setDoc(docRef, initialData);
-        setUserData(initialData);
+        setUserData(prev => ({ ...prev, ...initialData }));
       }
     });
 
-    return () => unsubscribe();
+    const goalRef = doc(db, 'global', 'weeklyGoal');
+    const unsubGoal = onSnapshot(goalRef, (snap) => {
+      if (snap.exists()) setGlobalWeeklyGoal(snap.data());
+    });
+
+    return () => {
+      unsubscribe();
+      unsubGoal();
+    };
   }, [user, db]);
 
   // ── Firestore Write Helpers ───────────────────────────────────
@@ -364,7 +402,8 @@ export default function App() {
       dailyProgress: {
         date: userData.dailyProgress.date,
         count: (userData.dailyProgress.count || 0) + 1
-      }
+      },
+      weeklyXp: (userData.weeklyXp || 0) + 1
     });
   };
 
@@ -395,6 +434,14 @@ export default function App() {
       return q;
     });
 
+    let totalQuestXp = 0;
+    updatedQuests.forEach(q => {
+      if (q.done && userData.quests?.find(prev => prev.id === q.id && !prev.done)) {
+        // Quest was just completed in this pass
+        totalQuestXp += q.xp;
+      }
+    });
+
     if (questsChanged) {
       while (newXp >= newLevel * newLevel * 100) {
         newLevel++;
@@ -407,7 +454,8 @@ export default function App() {
         level: newLevel,
         snailCoins: newCoins,
         snailFood: newFood,
-        snailWater: newWater
+        snailWater: newWater,
+        weeklyXp: (userData.weeklyXp || 0) + totalQuestXp
       };
 
       setUserData(prev => ({ ...prev, ...updates }));
@@ -657,6 +705,7 @@ Ne írj semmi mást a JSON-ön kívül!`;
     { id: 'phrases', label: 'Mondatok', icon: Languages },
     { id: 'practice', label: 'Gyakorlat', icon: Gamepad2 },
     { id: 'listening', label: 'Hallás', icon: Headphones },
+    { id: 'pronunciation', label: 'Kiejtés', icon: Mic },
     { id: 'grammar', label: 'Nyelvtan', icon: GraduationCap },
     { id: 'chat', label: 'AI Gyakorlás', icon: Sparkles },
     { id: 'progress', label: 'Haladás', icon: TrendingUp },
@@ -752,6 +801,7 @@ Ne írj semmi mást a JSON-ön kívül!`;
             <FlashcardTab
               items={combinedPhrases}
               categories={PHRASE_CATEGORIES}
+              vocabMap={userData.vocabMap}
               onFetchMore={handleFetchMoreWords}
               onProgress={handleProgress}
               onMarkKnown={(id, data) => handleMarkKnown(id, data)}
@@ -781,6 +831,15 @@ Ne írj semmi mást a JSON-ön kívül!`;
             savedSolved={userData.listeningSolved || []}
             onSolvePhrase={(id) => handleSolvePhrase('listening', id)}
           />}
+          {activeTab === 'pronunciation' && (
+            <PronunciationTab
+              phrases={combinedPhrases}
+              sound={sound}
+              onQuestProgress={handleQuestProgress}
+              updateFirebase={updateFirebase}
+              userData={userData}
+            />
+          )}
           {activeTab === 'chat' && <AiChatTab onNewFlashcard={handleNewFlashcard} onQuestProgress={handleQuestProgress} />}
           {activeTab === 'progress' && (
             <ProgressionTab
@@ -790,6 +849,7 @@ Ne írj semmi mást a JSON-ön kívül!`;
               showAllQuests={showAllQuests}
               setShowAllQuests={setShowAllQuests}
               onRedeemCoupon={handleRedeemCoupon}
+              globalWeeklyGoal={globalWeeklyGoal}
             />
           )}
         </main>

@@ -4,7 +4,7 @@ import { CATEGORIES } from '../../data/vocabulary';
 import { SNAIL_COUPONS } from '../../data/coupons';
 import { Confetti } from '../ui/Confetti';
 
-export function ProgressionTab({ userData, vocabulary, grammarLessons, showAllQuests, setShowAllQuests, onRedeemCoupon }) {
+export function ProgressionTab({ userData, vocabulary, grammarLessons, showAllQuests, setShowAllQuests, onRedeemCoupon, globalWeeklyGoal }) {
     const [confirmCoupon, setConfirmCoupon] = useState(null);
     const [showCouponConfetti, setShowCouponConfetti] = useState(false);
 
@@ -96,8 +96,41 @@ export function ProgressionTab({ userData, vocabulary, grammarLessons, showAllQu
             </div>
 
             {/* ═══════════════════════════════════════════════════════ */}
-            {/* DAILY QUESTS                                          */}
+            {/* WEEKLY JOINT GOAL (Heti Közös Cél)                  */}
             {/* ═══════════════════════════════════════════════════════ */}
+            {globalWeeklyGoal && (
+                <div className="bg-white rounded-[2rem] p-6 shadow-sm border-2 border-dashed border-purple-200 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 rotate-12 pointer-events-none">
+                        <Gift size={64} className="text-purple-500" />
+                    </div>
+                    <div className="relative z-10">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 className="text-xl font-black text-gray-800 flex items-center gap-2">
+                                    🤝 Heti Közös Cél
+                                </h3>
+                                <p className="text-xs font-bold text-gray-400 uppercase mt-1">Heti jutalom: <span className="text-purple-600">{globalWeeklyGoal.reward}</span></p>
+                            </div>
+                            <div className="text-right">
+                                <span className="text-2xl font-black text-purple-600">
+                                    {Math.round(((userData?.weeklyXp || 0) / globalWeeklyGoal.targetXp) * 100)}%
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="w-full h-4 bg-purple-50 rounded-full overflow-hidden shadow-inner mb-2 border border-purple-100">
+                            <div
+                                className="h-full bg-gradient-to-r from-purple-400 to-indigo-500 transition-all duration-1000 ease-out"
+                                style={{ width: `${Math.min(100, ((userData?.weeklyXp || 0) / globalWeeklyGoal.targetXp) * 100)}%` }}
+                            />
+                        </div>
+                        <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase">
+                            <span>{userData?.weeklyXp || 0} XP</span>
+                            <span>{globalWeeklyGoal.targetXp} XP Cél</span>
+                        </div>
+                    </div>
+                </div>
+            )}
             <div className="space-y-4 mt-6">
                 <div className="flex justify-between items-center px-2">
                     <h3 className="text-xl font-black text-gray-800 flex items-center gap-2">
@@ -151,17 +184,17 @@ export function ProgressionTab({ userData, vocabulary, grammarLessons, showAllQu
                             <div
                                 key={coupon.id}
                                 className={`rounded-3xl p-5 shadow-sm border flex items-center gap-4 transition-all duration-300 ${isRedeemed
-                                        ? 'bg-green-50/80 border-green-200 opacity-75'
-                                        : isUnlocked
-                                            ? `${coupon.bgLight} hover:shadow-md hover:scale-[1.01]`
-                                            : 'bg-gray-50 border-gray-200 opacity-60'
+                                    ? 'bg-green-50/80 border-green-200 opacity-75'
+                                    : isUnlocked
+                                        ? `${coupon.bgLight} hover:shadow-md hover:scale-[1.01]`
+                                        : 'bg-gray-50 border-gray-200 opacity-60'
                                     }`}
                             >
                                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-inner flex-shrink-0 ${isRedeemed
-                                        ? 'bg-green-100'
-                                        : isUnlocked
-                                            ? `bg-gradient-to-br ${coupon.color} text-white`
-                                            : 'bg-gray-100'
+                                    ? 'bg-green-100'
+                                    : isUnlocked
+                                        ? `bg-gradient-to-br ${coupon.color} text-white`
+                                        : 'bg-gray-100'
                                     }`}>
                                     {isRedeemed ? <Check size={24} className="text-green-600" /> : isUnlocked ? coupon.emoji : <Lock size={20} className="text-gray-400" />}
                                 </div>
@@ -172,10 +205,10 @@ export function ProgressionTab({ userData, vocabulary, grammarLessons, showAllQu
                                             {coupon.title}
                                         </span>
                                         <span className={`text-[10px] font-black px-2 py-0.5 rounded-full flex-shrink-0 ${isRedeemed
-                                                ? 'bg-green-100 text-green-600'
-                                                : isUnlocked
-                                                    ? 'bg-purple-100 text-purple-600'
-                                                    : 'bg-gray-100 text-gray-400'
+                                            ? 'bg-green-100 text-green-600'
+                                            : isUnlocked
+                                                ? 'bg-purple-100 text-purple-600'
+                                                : 'bg-gray-100 text-gray-400'
                                             }`}>
                                             {isRedeemed ? '✅ Beváltva' : `Szint ${coupon.requiredLevel}`}
                                         </span>
