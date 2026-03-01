@@ -14,11 +14,16 @@ export function AiChatTab({ onNewFlashcard, onQuestProgress }) {
         scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    const primaryKey = import.meta.env.VITE_GEMINI_API_KEY;
-    const secondaryKey = import.meta.env.VITE_GEMINI_API_KEY_SECONDARY;
-
     async function callGemini(systemPrompt, msgs) {
-        if (!primaryKey) throw new Error('No API key');
+        // Diagnostic Logging Utility
+        const redact = (k) => k ? `${k.substring(0, 6)}...${k.substring(k.length - 4)}` : "MISSING";
+        console.log(`[Diagnostic] callGemini invoked. Keys: primary=${redact(primaryKey)}, secondary=${redact(secondaryKey)}`);
+
+        if (!primaryKey) {
+            console.error("[Diagnostic] No primary API key found in import.meta.env");
+            throw new Error('Hiányzó API kulcs (VITE_GEMINI_API_KEY)');
+        }
+
         const contents = msgs.map(m => ({
             role: m.role === 'user' ? 'user' : 'model',
             parts: [{ text: m.text }],
@@ -60,12 +65,13 @@ export function AiChatTab({ onNewFlashcard, onQuestProgress }) {
             },
         });
 
-        const executeFetch = async (key) => {
+        const executeFetch = async (key, name) => {
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 15000);
             try {
+                console.log(`[Diagnostic] Attempting fetch with key: ${name} (${redact(key)})`);
                 const response = await fetch(
-                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${key}`,
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${key}`,
                     {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -75,8 +81,10 @@ export function AiChatTab({ onNewFlashcard, onQuestProgress }) {
                 );
                 if (!response.ok) {
                     const errData = await response.text();
+                    console.error(`[Diagnostic] ${name} failed. Status: ${response.status}`, errData);
                     throw new Error(`API error ${response.status}: ${errData}`);
                 }
+                console.log(`[Diagnostic] ${name} request successful!`);
                 return await response.json();
             } finally {
                 clearTimeout(timeout);
@@ -84,18 +92,20 @@ export function AiChatTab({ onNewFlashcard, onQuestProgress }) {
         };
 
         try {
-            const data = await executeFetch(primaryKey);
-            return data.candidates?.[0]?.content?.parts?.[0]?.text || '{"reply": "I\'m here to help! 😊"}';
+            const data = await executeFetch(primaryKey, "PRIMARY");
+            return data.candidates?.[0]?.content?.parts?.[0]?.text || '{"reply": "Szia! Készen állok a gyakorlásra! 😊"}';
         } catch (err) {
-            console.warn("Primary Gemini key failed, trying secondary if available...", err);
-            const shouldRetry = err.message.includes('429') || err.message.includes('403');
+            console.warn(`[Diagnostic] Primary key failed. Should try secondary? ${!!secondaryKey}`, err.message);
+
+            // Retrying for specific status codes (Rate limited, Unauthorized/Expired)
+            const shouldRetry = err.message.includes('429') || err.message.includes('400') || err.message.includes('403');
 
             if (secondaryKey && shouldRetry) {
                 try {
-                    const fallbackData = await executeFetch(secondaryKey);
-                    return fallbackData.candidates?.[0]?.content?.parts?.[0]?.text || '{"reply": "I\'m here to help! 😊"}';
+                    const fallbackData = await executeFetch(secondaryKey, "SECONDARY");
+                    return fallbackData.candidates?.[0]?.content?.parts?.[0]?.text || '{"reply": "Szia! Készen állok a gyakorlásra! 😊"}';
                 } catch (fallbackErr) {
-                    console.error("Secondary key also failed:", fallbackErr);
+                    console.error("[Diagnostic] Secondary key also failed:", fallbackErr.message);
                     throw fallbackErr;
                 }
             }
