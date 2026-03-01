@@ -1,0 +1,23 @@
+--- VOCABULARY CATEGORIES ---
+alapok          : 102
+igek            : 141
+melleknevek     : 150
+csalad          : 27
+otthon          : 116
+etel            : 67
+ido             : 98
+munka           : 25
+szabadido       : 8
+utazas          : 42
+termeszet       : 64
+egeszseg        : 64
+ruhazat         : 0
+vasarlas_helyek : 0
+idojaras        : 0
+
+--- PHRASE CATEGORIES ---
+udvozles        : 7
+bemutatkozas    : 4
+etkezes         : 9
+vasarlas        : 24
+segitseg        : 6

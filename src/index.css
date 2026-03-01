@@ -142,30 +142,76 @@
   border-radius: 999px;
 }
 
+/* ── Snail Floating Animation ──────────────────────── */
+@keyframes floatingSnail {
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  25% {
+    transform: translateY(-5px) rotate(2deg);
+  }
+
+  75% {
+    transform: translateY(5px) rotate(-2deg);
+  }
+}
+
+.animate-floating-snail {
+  animation: floatingSnail 3s ease-in-out infinite;
+}
+
 /* ── Main Content Hover Snail ─────────────────────── */
 .main-content-bg {
   position: relative;
-  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.8) 0%, rgba(243, 232, 255, 0.4) 100%);
-  transition: all 0.5s ease;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.9) 0%, rgba(243, 232, 255, 0.5) 100%);
+  transition: background 0.5s ease;
   overflow: hidden;
   z-index: 10;
 }
 
 .main-content-bg::before {
-  content: "";
+  content: "🐌";
   position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 24 24' fill='none' stroke='%23a855f7' stroke-width='0.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 13a6 6 0 1 0 12 0 4 4 0 1 0-8 0 2 2 0 1 0 4 0'/%3E%3Cpath d='m20 2.7 2 2.3'/%3E%3Cpath d='m22 2.7-2 2.3'/%3E%3Cpath d='M18 19c-2.8 2.2-7.6 2.2-10.4 0'/%3E%3Cpath d='M14 13h.01'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: center 20%;
+  font-size: 8rem;
+  top: 20%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.5);
   opacity: 0;
-  transform: scale(0.8) translateY(20px);
-  transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 1s cubic-bezier(0.34, 1.56, 0.64, 1);
   pointer-events: none;
   z-index: -1;
+  filter: blur(4px);
 }
 
 .main-content-bg:hover::before {
-  opacity: 0.07;
-  transform: scale(1.1) translateY(0);
+  opacity: 0.15;
+  transform: translate(-50%, -50%) scale(1.2);
+  filter: blur(0);
+}
+
+/* ── Snail Trail ─────────────────────────────────── */
+@keyframes snailTrail {
+  0% {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 0.5;
+  }
+
+  100% {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+}
+
+.snail-trail::after {
+  content: "💧";
+  position: absolute;
+  font-size: 8px;
+  animation: snailTrail 1s linear infinite;
 }
