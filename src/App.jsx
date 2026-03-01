@@ -130,8 +130,10 @@ export default function App() {
       userData?.vocabMap?.[v.id] === 'review' ||
       userData?.vocabMap?.[v.id] === 'learning'
     );
-    return generateDynamicSentences(learningOrKnown, 20);
-  }, [combinedVocabulary, userData.vocabMap]);
+    const generated = generateDynamicSentences(learningOrKnown, 50);
+    // Filter out items already solved today
+    return generated.filter(p => !(userData.practiceSolved || []).includes(p.id));
+  }, [combinedVocabulary, userData.vocabMap, userData.practiceSolved]);
 
   // ── 1. Auth Listener ──────────────────────────────────────────
   useEffect(() => {
@@ -190,12 +192,16 @@ export default function App() {
             streak: dbStreak,
             quests: newQuests,
             snailFoodLevel: newFoodLevel,
-            snailWaterLevel: newWaterLevel
+            snailWaterLevel: newWaterLevel,
+            practiceSolved: [],
+            listeningSolved: []
           }, { merge: true });
 
           data.quests = newQuests;
           data.snailFoodLevel = newFoodLevel;
           data.snailWaterLevel = newWaterLevel;
+          data.practiceSolved = [];
+          data.listeningSolved = [];
         }
 
         setUserData({

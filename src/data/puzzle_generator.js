@@ -76,7 +76,18 @@ const FALLBACK_PHRASES = [
     { english: "They have a big house.", hungarian: "Nagy házuk van." }
 ];
 
-export function generateDynamicSentences(knownVocabulary, count = 20) {
+// Simple hash function for stable IDs
+function stringToId(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash).toString(36);
+}
+
+export function generateDynamicSentences(knownVocabulary, count = 50) {
     if (!knownVocabulary || knownVocabulary.length < 10) {
         return FALLBACK_PHRASES; // Return fallbacks if not enough words learnt
     }
@@ -115,7 +126,7 @@ export function generateDynamicSentences(knownVocabulary, count = 20) {
             eng = eng.replace(`[${key}]`, selectedWord);
         });
 
-        return isValid ? { english: eng, hungarian: hun, id: `gen_${Date.now()}_${Math.random()}` } : null;
+        return isValid ? { english: eng, hungarian: hun, id: `gen_${stringToId(eng)}` } : null;
     };
 
     const results = [];
