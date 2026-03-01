@@ -49,7 +49,7 @@ export function SentencePuzzle({ phrases, sound, onQuestProgress, savedSolved = 
             const result = newSelected.map(w => w.text).join(' ');
             if (result.toLowerCase() === currentPhrase.english.toLowerCase()) {
                 setIsCorrect(true);
-                sound.playDing();
+                sound.playSuccess();
                 setShowConfetti(true);
                 if (onQuestProgress) onQuestProgress('sentence');
                 if (onSolvePhrase) onSolvePhrase(currentPhrase.id);

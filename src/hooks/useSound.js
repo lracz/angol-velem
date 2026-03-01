@@ -15,42 +15,32 @@ export function useSound() {
         return ctxRef.current;
     }, []);
 
-    const playDing = useCallback(() => {
+    const playSuccess = useCallback(() => {
         try {
             const ctx = getCtx();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.connect(gain).connect(ctx.destination);
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(880, ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.1);
-            gain.gain.setValueAtTime(0.3, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-            osc.start(ctx.currentTime);
-            osc.stop(ctx.currentTime + 0.4);
+            const now = ctx.currentTime;
+
+            // Harmonious two-note chime (C5 and E5)
+            [523.25, 659.25].forEach((freq, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + i * 0.05);
+
+                gain.gain.setValueAtTime(0, now + i * 0.05);
+                gain.gain.linearRampToValueAtTime(0.2, now + i * 0.05 + 0.1);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.05 + 0.5);
+
+                osc.connect(gain).connect(ctx.destination);
+                osc.start(now + i * 0.05);
+                osc.stop(now + i * 0.05 + 0.5);
+            });
         } catch { /* no audio support */ }
     }, [getCtx]);
 
-    const playSwoosh = useCallback(() => {
-        try {
-            const ctx = getCtx();
-            const bufferSize = ctx.sampleRate * 0.15;
-            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) {
-                data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize) * 0.15;
-            }
-            const source = ctx.createBufferSource();
-            source.buffer = buffer;
-            const filter = ctx.createBiquadFilter();
-            filter.type = 'bandpass';
-            filter.frequency.value = 1500;
-            source.connect(filter).connect(ctx.destination);
-            source.start();
-        } catch { /* no audio support */ }
-    }, [getCtx]);
-
-    return { playDing, playSwoosh };
+    const playDing = playSuccess;
+    const playSwoosh = playSuccess;
+    return { playDing, playSwoosh, playSuccess };
 }
 
 // ═══════════════════════════════════════════════════════════════════

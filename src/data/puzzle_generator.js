@@ -54,26 +54,48 @@ const TEMPLATES = [
         requirements: { Place: ["school", "hospital", "store", "park", "bank", "restaurant"] }
     },
 
-    // Time and Weather
     {
-        pattern: "It is [Adj] today.",
-        hungarian: "Ma [Adj_Hu] van.",
-        requirements: { Adj: ["hot", "cold", "good", "bad", "sunny", "rainy"] }
+        pattern: "I [Verb] every [Day].",
+        hungarian: "Minden [Day_Hu] [Verb_Hu].",
+        requirements: { Verb: ["work", "study", "run", "learn", "play"], Day: ["day", "morning", "night", "week"] }
+    },
+    // Subject + Can + Verb
+    {
+        pattern: "I can [Verb].",
+        hungarian: "Tudok [Verb_Hu].",
+        requirements: { Verb: ["see", "speak", "go", "work", "play", "learn"] }
     },
     {
-        pattern: "I work every [Day].",
-        hungarian: "Minden [Day_Hu] dolgozom.",
-        requirements: { Day: ["day", "week", "month", "year", "morning", "night"] }
+        pattern: "Can you [Verb]?",
+        hungarian: "Tudsz [Verb_Hu]?",
+        requirements: { Verb: ["see", "go", "work", "play", "learn", "help"] }
+    },
+    // Possessive
+    {
+        pattern: "It is my [Obj].",
+        hungarian: "Ez az én [Obj_Hu].",
+        requirements: { Obj: ["car", "book", "house", "dog", "cat", "phone", "water"] }
+    },
+    {
+        pattern: "Where is your [Obj]?",
+        hungarian: "Hol van a te [Obj_Hu]?",
+        requirements: { Obj: ["car", "book", "house", "dog", "cat", "phone", "water"] }
+    },
+    // Adjective + Noun
+    {
+        pattern: "I have a [Adj] [Obj].",
+        hungarian: "Van egy [Adj_Hu] [Obj_Hu].",
+        requirements: { Adj: ["big", "small", "new", "old", "good", "bad"], Obj: ["car", "house", "dog", "cat", "book", "phone"] }
     }
 ];
 
 // Fallback phrases if player doesn't have enough known words
 const FALLBACK_PHRASES = [
-    { english: "I am happy today.", hungarian: "Ma boldog vagyok." },
-    { english: "The cat is small.", hungarian: "A macska kicsi." },
-    { english: "I see a blue car.", hungarian: "Látok egy kék autót." },
-    { english: "We go to school.", hungarian: "Iskolába megyünk." },
-    { english: "They have a big house.", hungarian: "Nagy házuk van." }
+    { id: "fallback_1", english: "I am happy today.", hungarian: "Ma boldog vagyok." },
+    { id: "fallback_2", english: "The cat is small.", hungarian: "A macska kicsi." },
+    { id: "fallback_3", english: "I see a blue car.", hungarian: "Látok egy kék autót." },
+    { id: "fallback_4", english: "We go to school.", hungarian: "Iskolába megyünk." },
+    { id: "fallback_5", english: "They have a big house.", hungarian: "Nagy házuk van." }
 ];
 
 // Simple hash function for stable IDs

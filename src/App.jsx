@@ -143,10 +143,17 @@ export default function App() {
       userData?.vocabMap?.[v.id] === 'review' ||
       userData?.vocabMap?.[v.id] === 'learning'
     );
-    const generated = generateDynamicSentences(learningOrKnown, 50);
-    // Filter out items already solved today
-    return generated.filter(p => !(userData.practiceSolved || []).includes(p.id));
-  }, [combinedVocabulary, userData.vocabMap, userData.practiceSolved]);
+    const generated = generateDynamicSentences(learningOrKnown, 60);
+
+    // Mix in some static PHRASES that aren't solved yet
+    const unsolvedStatic = PHRASES.filter(p => !(userData.practiceSolved || []).includes(p.id));
+    // Pick up to 40 random static ones
+    const randomStatic = [...unsolvedStatic].sort(() => Math.random() - 0.5).slice(0, 40);
+
+    const combined = [...generated, ...randomStatic];
+    // Filter out items already solved today (final check)
+    return combined.filter(p => !(userData.practiceSolved || []).includes(p.id));
+  }, [combinedVocabulary, userData.vocabMap, userData.practiceSolved, PHRASES]);
 
   // ── 1. Auth Listener ──────────────────────────────────────────
   useEffect(() => {
@@ -793,7 +800,7 @@ Ne írj semmi mást a JSON-ön kívül!`;
               onProgress={handleProgress}
               onFetchMore={handleFetchMoreWords}
               onMarkKnown={(id, data) => handleMarkKnown(id, data)}
-              playSound={sound.playDing}
+              playSound={sound.playSuccess}
               onQuestProgress={handleQuestProgress}
             />
           )}
@@ -805,7 +812,7 @@ Ne írj semmi mást a JSON-ön kívül!`;
               onFetchMore={handleFetchMoreWords}
               onProgress={handleProgress}
               onMarkKnown={(id, data) => handleMarkKnown(id, data)}
-              playSound={sound.playDing}
+              playSound={sound.playSuccess}
               onQuestProgress={handleQuestProgress}
               isSentences={true}
             />
