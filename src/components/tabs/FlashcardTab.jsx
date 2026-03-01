@@ -124,12 +124,15 @@ export function FlashcardTab({
     }
 
     if (selectedCategory && filteredCards.length > 0 && learningCards.length === 0) {
+        const itemType = isSentences ? 'mondatot' : 'szót';
+        const itemTypeAlt = isSentences ? 'mondatot' : 'szót';
+
         return (
             <div className="flex flex-col items-center justify-center p-8 bg-white/80 backdrop-blur rounded-3xl border border-purple-100 shadow-xl animate-bounce-in text-center">
                 <div className="text-6xl mb-4">🎉</div>
                 <h2 className="text-2xl font-bold text-purple-700 mb-2">Szuper!</h2>
-                <p className="text-gray-600 mb-6">Ebben a kategóriában minden szót megtanultál!</p>
-                <div className="flex gap-3">
+                <p className="text-gray-600 mb-6">Ebben a kategóriában minden {isSentences ? 'mondatot' : 'szót'} megtanultál!</p>
+                <div className="flex flex-wrap items-center justify-center gap-3">
                     <button onClick={() => setSelectedCategory(null)} className="px-5 py-3 bg-gray-100 text-gray-600 rounded-full font-bold shadow-md hover:bg-gray-200 transition-all">
                         Másik téma
                     </button>
@@ -139,7 +142,7 @@ export function FlashcardTab({
                         className="px-5 py-3 bg-gradient-to-r from-blue-400 to-indigo-500 text-white rounded-full font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 flex items-center gap-2"
                     >
                         {isFetching ? <Sparkles size={18} className="animate-spin" /> : <Sparkles size={18} />}
-                        Kérek még 50 szót
+                        Kérek még 50 {isSentences ? 'mondatot' : 'szót'}
                     </button>
                     <button onClick={() => { onMarkKnown(null, 'resetAll'); setIndex(0); }} className="px-5 py-3 bg-white border-2 border-purple-100 text-purple-600 rounded-full font-bold shadow-sm hover:bg-purple-50 transition-all">
                         <RotateCcw size={18} className="inline mr-1" /> Újrakezdés
