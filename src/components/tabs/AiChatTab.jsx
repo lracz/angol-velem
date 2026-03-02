@@ -20,11 +20,19 @@ export function AiChatTab({ onNewFlashcard, onQuestProgress }) {
     async function callGemini(systemPrompt, msgs) {
         // Diagnostic Logging Utility
         const redact = (k) => k ? `${k.substring(0, 6)}...${k.substring(k.length - 4)}` : "MISSING";
-        console.log(`[Diagnostic] callGemini invoked. Keys: primary=${redact(primaryKey)}, secondary=${redact(secondaryKey)}`);
+
+        // Key Metadata Check
+        const kLen = primaryKey ? primaryKey.length : 0;
+        const kTTrimLen = primaryKey ? primaryKey.trim().length : 0;
+        console.log(`[Diagnostic] callGemini invoked. Keys: primary=${redact(primaryKey)} (len: ${kLen}, trim: ${kTTrimLen}), secondary=${redact(secondaryKey)}`);
 
         if (!primaryKey) {
             console.error("[Diagnostic] No primary API key found in import.meta.env");
             throw new Error('Hiányzó API kulcs (VITE_GEMINI_API_KEY)');
+        }
+
+        if (kLen !== kTTrimLen) {
+            console.warn("[Diagnostic] API key contains leading or trailing whitespace!");
         }
 
         const contents = msgs.map(m => ({
@@ -68,13 +76,13 @@ export function AiChatTab({ onNewFlashcard, onQuestProgress }) {
             },
         });
 
-        const executeFetch = async (key, name) => {
+        const executeFetch = async (key, name, model = "gemini-2.0-flash-lite") => {
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 15000);
             try {
-                console.log(`[Diagnostic] Attempting fetch with key: ${name} (${redact(key)})`);
+                console.log(`[Diagnostic] Attempting fetch with key: ${name} (${redact(key)}) using model: ${model}`);
                 const response = await fetch(
-                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${key}`,
+                    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
                     {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -84,10 +92,17 @@ export function AiChatTab({ onNewFlashcard, onQuestProgress }) {
                 );
                 if (!response.ok) {
                     const errData = await response.text();
-                    console.error(`[Diagnostic] ${name} failed. Status: ${response.status}`, errData);
+                    console.error(`[Diagnostic] ${name} (${model}) failed. Status: ${response.status}`, errData);
+
+                    // Specific fallback for 400 error on the new lite model
+                    if (response.status === 400 && model === "gemini-2.0-flash-lite") {
+                        console.warn("[Diagnostic] 400 error detected. Retrying with gemini-1.5-flash fallback...");
+                        return executeFetch(key, name, "gemini-1.5-flash");
+                    }
+
                     throw new Error(`API error ${response.status}: ${errData}`);
                 }
-                console.log(`[Diagnostic] ${name} request successful!`);
+                console.log(`[Diagnostic] ${name} (${model}) successful!`);
                 return await response.json();
             } finally {
                 clearTimeout(timeout);
