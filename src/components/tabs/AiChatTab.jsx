@@ -143,12 +143,24 @@ export function AiChatTab({ onNewFlashcard, onQuestProgress }) {
             setMessages([{ role: 'ai', text: reply }]);
         } catch (err) {
             console.error("Gemini API Error details:", err);
+            let displayMsg = 'Hiba történt. Részletek: ' + err.message.substring(0, 100);
+
+            try {
+                // Try to parse Google's JSON error if it's in the message
+                const jsonStart = err.message.indexOf('{');
+                if (jsonStart !== -1) {
+                    const jsonPart = err.message.substring(jsonStart);
+                    const errorObj = JSON.parse(jsonPart);
+                    if (errorObj.error?.message) {
+                        displayMsg = `API Hiba: ${errorObj.error.message} 🔑`;
+                    }
+                }
+            } catch (e) { /* ignore parse error */ }
+
             if (err.message.includes('429')) {
                 setError('Az AI tanár éppen túl elfoglalt (429). Kérlek várj egy percet! ☕');
-            } else if (err.message.includes('400')) {
-                setError('Hiba történt (400). Valószínűleg lejárt vagy hibás az API kulcs a Vercelen! 🔑');
             } else {
-                setError('Hiba történt. Részletek: ' + err.message.substring(0, 100));
+                setError(displayMsg);
             }
         } finally {
             setLoading(false);
@@ -178,12 +190,23 @@ export function AiChatTab({ onNewFlashcard, onQuestProgress }) {
             setMessages(prev => [...prev, { role: 'ai', text: reply, correction }]);
         } catch (err) {
             console.error("Gemini API Error details:", err);
+            let displayMsg = 'Hiba történt. Részletek: ' + err.message.substring(0, 100);
+
+            try {
+                const jsonStart = err.message.indexOf('{');
+                if (jsonStart !== -1) {
+                    const jsonPart = err.message.substring(jsonStart);
+                    const errorObj = JSON.parse(jsonPart);
+                    if (errorObj.error?.message) {
+                        displayMsg = `API Hiba: ${errorObj.error.message} 🔑`;
+                    }
+                }
+            } catch (e) { /* ignore parse error */ }
+
             if (err.message.includes('429')) {
                 setError('Sok kérést küldtél, az AI pihen egy kicsit. Várj pár percet! 💤');
-            } else if (err.message.includes('400')) {
-                setError('API hiba (400). Ellenőrizd a Vercel környezeti változókat! 🔑');
             } else {
-                setError('Hiba történt. Részletek: ' + err.message.substring(0, 100));
+                setError(displayMsg);
             }
         } finally {
             setLoading(false);
