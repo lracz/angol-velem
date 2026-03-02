@@ -48,14 +48,30 @@ export function useSound() {
 // ═══════════════════════════════════════════════════════════════════
 
 let preferredVoice = null;
+let voiceRetries = 0;
 
 const loadVoices = () => {
     if (!window.speechSynthesis) return;
     const voices = window.speechSynthesis.getVoices();
-    // Prioritize natural/google voices
-    preferredVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Premium')))
-        || voices.find(v => v.lang.startsWith('en-US'))
-        || voices.find(v => v.lang.startsWith('en'));
+
+    // Priority 1: High-quality English (Google/Natural/Premium)
+    let voice = voices.find(v => v.lang.startsWith('en') &&
+        (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Premium') || v.name.includes('Samantha')));
+
+    // Priority 2: Any US English
+    if (!voice) voice = voices.find(v => v.lang.startsWith('en-US'));
+
+    // Priority 3: Any English
+    if (!voice) voice = voices.find(v => v.lang.startsWith('en'));
+
+    if (voice) {
+        preferredVoice = voice;
+        console.log(`[Audio] Voice selected: ${voice.name} (${voice.lang})`);
+    } else if (voices.length > 0 && voiceRetries < 5) {
+        // Retry if voices are present but none matched English yet (common on some browsers)
+        voiceRetries++;
+        setTimeout(loadVoices, 500);
+    }
 };
 
 if (window.speechSynthesis) {
@@ -63,13 +79,20 @@ if (window.speechSynthesis) {
         window.speechSynthesis.onvoiceschanged = loadVoices;
     }
     loadVoices();
+    // Extra insurance: try again after 1s
+    setTimeout(loadVoices, 1000);
 }
 
-export const speak = (text, rate = 1) => {
-    if (!window.speechSynthesis) return;
+export const speak = (text, rate = 0.9) => {
+    if (!window.speechSynthesis) {
+        console.warn("[Audio] Synthesis not supported");
+        return;
+    }
     window.speechSynthesis.cancel();
 
     const u = new SpeechSynthesisUtterance(text);
+
+    // Always call loadVoices just in case they arrived late
     if (!preferredVoice) loadVoices();
 
     if (preferredVoice) {
@@ -77,7 +100,9 @@ export const speak = (text, rate = 1) => {
     }
 
     u.lang = 'en-US';
-    u.rate = rate;
-    u.pitch = 1.0; // Slightly more natural pitch
+    u.rate = rate; // Slightly slower for better clarity
+    u.pitch = 1.0;
+    u.volume = 1.0;
+
     window.speechSynthesis.speak(u);
 };

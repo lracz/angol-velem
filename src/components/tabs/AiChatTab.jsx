@@ -130,6 +130,8 @@ export function AiChatTab({ onNewFlashcard, onQuestProgress }) {
             console.error("Gemini API Error details:", err);
             if (err.message.includes('429')) {
                 setError('Az AI tanár éppen túl elfoglalt (429). Kérlek várj egy percet! ☕');
+            } else if (err.message.includes('400')) {
+                setError('Hiba történt (400). Valószínűleg lejárt vagy hibás az API kulcs a Vercelen! 🔑');
             } else {
                 setError('Hiba történt. Részletek: ' + err.message.substring(0, 100));
             }
@@ -163,6 +165,8 @@ export function AiChatTab({ onNewFlashcard, onQuestProgress }) {
             console.error("Gemini API Error details:", err);
             if (err.message.includes('429')) {
                 setError('Sok kérést küldtél, az AI pihen egy kicsit. Várj pár percet! 💤');
+            } else if (err.message.includes('400')) {
+                setError('API hiba (400). Ellenőrizd a Vercel környezeti változókat! 🔑');
             } else {
                 setError('Hiba történt. Részletek: ' + err.message.substring(0, 100));
             }
