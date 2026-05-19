@@ -9,6 +9,7 @@ export function AiChatTab({ onNewFlashcard, onQuestProgress }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const scrollRef = useRef(null);
+    const modelPreference = useRef("gemini-2.0-flash-lite");
 
     useEffect(() => {
         scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -76,7 +77,7 @@ export function AiChatTab({ onNewFlashcard, onQuestProgress }) {
             },
         });
 
-        const executeFetch = async (key, name, model = "gemini-2.0-flash-lite") => {
+        const executeFetch = async (key, name, model = modelPreference.current) => {
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 15000);
             try {
@@ -94,9 +95,10 @@ export function AiChatTab({ onNewFlashcard, onQuestProgress }) {
                     const errData = await response.text();
                     console.error(`[Diagnostic] ${name} (${model}) failed. Status: ${response.status}`, errData);
 
-                    // Specific fallback for 400 error on the new lite model
-                    if (response.status === 400 && model === "gemini-2.0-flash-lite") {
-                        console.warn("[Diagnostic] 400 error detected. Retrying with gemini-1.5-flash fallback...");
+                    // If 400 (Invalid/Expired) or 429 (Quota) happens on the 2.0 model, fall back to 1.5
+                    if ((response.status === 400 || response.status === 429) && model === "gemini-2.0-flash-lite") {
+                        console.warn(`[Diagnostic] ${response.status} error on 2.0 model. Switching session to gemini-1.5-flash...`);
+                        modelPreference.current = "gemini-1.5-flash";
                         return executeFetch(key, name, "gemini-1.5-flash");
                     }
 

@@ -1,11 +1,15 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const GEMINI_API_KEY = "AIzaSyBqcrTD0WWtHia-PlvwNg3jZAKxM3eRv7c";
+const GEMINI_API_KEY = process.env.VITE_GEMINI_API_KEY;
+
 
 const CATEGORIES = [
     "Alapvető Névmások és Igék (Core Pronouns & Verbs)",
